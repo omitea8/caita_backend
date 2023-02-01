@@ -13,8 +13,7 @@ module CaitaBackend
 
     # cookieを使うためのmiddlewareの有効化
     config.middleware.use ActionDispatch::Cookies
-    config.middleware.use ActionDispatch::Session::CookieStore, key: '_your_app_session'#, secure: true
-    # config.action_dispatch.cookies_same_site_protection = :none
+    config.middleware.use ActionDispatch::Session::CookieStore, key: '_your_app_session'
     
   end
 end
