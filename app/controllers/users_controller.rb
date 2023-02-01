@@ -18,4 +18,7 @@ class UsersController < ApplicationController
             '&code_challenge_method=s256' }
     end
 
+    def getToken
+    end
+
 end
