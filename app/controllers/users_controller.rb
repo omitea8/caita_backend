@@ -5,6 +5,7 @@ class UsersController < ApplicationController
     def login
         state = SecureRandom.hex(16)
         session[:state] = state
+        puts session[:state]
         challengeOrigin = SecureRandom.hex(16)
         session[:challengeOrigin] =challengeOrigin
         challenge = Digest::SHA256.hexdigest(challengeOrigin)
@@ -19,6 +20,10 @@ class UsersController < ApplicationController
     end
 
     def getToken
+        puts session[:state]
+        puts params[:state]
+        checkstate = params[:state] === session[:state]
+        puts checkstate
     end
 
 end
