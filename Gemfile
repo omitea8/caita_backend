@@ -20,7 +20,6 @@ gem "bootsnap", require: false
 
 # I put in
 gem 'rack-cors'
-gem "rails_same_site_cookie", "~> 0.1.8"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
