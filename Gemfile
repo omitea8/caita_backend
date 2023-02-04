@@ -20,6 +20,7 @@ gem "bootsnap", require: false
 
 # I put in
 gem 'rack-cors'
+gem 'dotenv-rails'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
