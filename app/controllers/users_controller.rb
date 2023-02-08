@@ -49,10 +49,9 @@ class UsersController < ApplicationController
             message = { message: res.message }
             messageJson = message.to_json
             render json: messageJson
-            puts messageJson
         else
-        # stateの検証がfalseだったら 
-        puts checkstate
+            # stateの検証がfalseだったら 
+            puts checkstate
 
         end
     end
