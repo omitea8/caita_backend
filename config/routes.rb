@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
 
-  get "users/login"
+  get 'users/login'
+  post 'users/getToken'
 
 end
