@@ -68,11 +68,7 @@ class UsersController < ApplicationController
         puts res.body
         # frontednに任意のデータを送る
         body = JSON.parse(res.body)
-        senddata = {
-            profile_image_url: body['data']['profile_image_url'],
-            username: body['data']['username'],
-            description: body['data']['description']
-        }
+        senddata = body['data'].extract!('profile_image_url', 'username', 'description')
         senddataJson = senddata.to_json
         render json: senddataJson
     end
