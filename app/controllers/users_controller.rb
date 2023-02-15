@@ -55,7 +55,7 @@ class UsersController < ApplicationController
         end
     end
 
-    def getApi
+    def getProifile
         # twitterのプロフィール情報を取得
         uri = URI.parse("https://api.twitter.com/2/users/me")
         uri.query = URI.encode_www_form({"user.fields": "description,profile_image_url"})
