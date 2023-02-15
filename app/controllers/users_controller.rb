@@ -58,10 +58,7 @@ class UsersController < ApplicationController
     def getApi
         # twitterのプロフィール情報を取得
         uri = URI.parse("https://api.twitter.com/2/users/me")
-        params = {
-          "user.fields": "description,profile_image_url"
-        }
-        uri.query = URI.encode_www_form(params)
+        uri.query = URI.encode_www_form({"user.fields": "description,profile_image_url"})
         headers = {
             'Authorization'=>"Bearer #{session[:accessToken]}",
         }
