@@ -16,13 +16,13 @@ class UsersController < ApplicationController
             "response_type=code"\
             "&client_id=#{ENV['CLIENT_ID']}"\
             "&redirect_uri=#{ENV['TWITTER_CALLBACK_URL']}"\
-            "&scope=users.read"\
+            "&scope=tweet.read%20users.read"\
             "&state=#{state}"\
             "&code_challenge=#{challenge}"\
             '&code_challenge_method=S256'}
     end
 
-    def getToken 
+    def gettoken 
         # stateの検証
         checkstate = params[:state] === session[:state]
         # stateの検証がtrueだったら
@@ -52,8 +52,25 @@ class UsersController < ApplicationController
         else
             # stateの検証がfalseだったら 
             puts checkstate
-
         end
+    end
+
+    def getprofile
+        # twitterのプロフィール情報を取得
+        uri = URI.parse("https://api.twitter.com/2/users/me")
+        uri.query = URI.encode_www_form({"user.fields": "description,profile_image_url"})
+        headers = {
+            'Authorization'=>"Bearer #{session[:accessToken]}",
+        }
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = true
+        res = http.get(uri, headers)
+        puts res.body
+        # frontednに任意のデータを送る
+        body = JSON.parse(res.body)
+        senddata = body['data'].extract!('profile_image_url', 'username', 'description')
+        senddataJson = senddata.to_json
+        render json: senddataJson
     end
 
 end
