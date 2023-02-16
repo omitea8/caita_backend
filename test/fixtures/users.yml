@@ -1,7 +1,19 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  uid: MyString
+  id: 1
+  twitter_system_id: MyString
+  twitter_id: MyString
+  twitter_name: MyString
+  twitter_profile_imge: MyString
+  twitter_description: MyString
+  token: MyString
 
 two:
-  uid: MyString
+  id: 1
+  twitter_system_id: MyString
+  twitter_id: MyString
+  twitter_name: MyString
+  twitter_profile_imge: MyString
+  twitter_description: MyString
+  token: MyString
