@@ -41,10 +41,10 @@ class UsersController < ApplicationController
             http = Net::HTTP.new(url.host, 443)
             http.use_ssl = true
             res = http.start {|http| http.request(req) }
+            json = JSON.parse(res.body)
             # アクセストークンをsessionに保存
             session[:accessToken] = json['access_token']
             # フロントエンドにログイン成功を送る
-            json = JSON.parse(res.body)
             message = { message: res.message }
             messageJson = message.to_json
             render json: messageJson
@@ -64,16 +64,21 @@ class UsersController < ApplicationController
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
         res = http.get(uri, headers)
-        puts res.body
         # frontednに任意のデータを送る
         body = JSON.parse(res.body)
-        senddata = body['data'].extract!('profile_image_url', 'username', 'description')
+        senddata = body['data'].extract!( 'username', 'profile_image_url', 'description')
         senddataJson = senddata.to_json
         render json: senddataJson
-    end
-
-    def register
-        users = []
+        # ユーザーを登録する
+        usersdata = JSON.parse(res.body)
+        users = [
+            twitter_system_id: usersdata['data']['id'],
+            twitter_id: usersdata['data']['name'],
+            twitter_name: usersdata['data']['username'],
+            twitter_profile_image: usersdata['data']['profile_image_url'],
+            twitter_description: usersdata['data']['description'],
+            token: session[:accessToken]
+        ]
         User.upsert_all(users,unique_by: :twitter_system_id)
     end
 
