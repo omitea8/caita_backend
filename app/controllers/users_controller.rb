@@ -22,7 +22,7 @@ class UsersController < ApplicationController
             '&code_challenge_method=S256'}
     end
 
-    def getToken 
+    def gettoken 
         # stateの検証
         checkstate = params[:state] === session[:state]
         # stateの検証がtrueだったら
@@ -55,7 +55,7 @@ class UsersController < ApplicationController
         end
     end
 
-    def getProifile
+    def getprofile
         # twitterのプロフィール情報を取得
         uri = URI.parse("https://api.twitter.com/2/users/me")
         uri.query = URI.encode_www_form({"user.fields": "description,profile_image_url"})

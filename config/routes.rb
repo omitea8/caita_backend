@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
 
   get 'users/login'
-  post 'users/getToken'
-  get 'users/getProifile'
+  post 'users/gettoken'
+  get 'users/getprofile'
 
 end
