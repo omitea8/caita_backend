@@ -45,9 +45,7 @@ class UsersController < ApplicationController
             # アクセストークンをsessionに保存
             session[:accessToken] = json['access_token']
             # フロントエンドにログイン成功を送る
-            message = { message: res.message }
-            messageJson = message.to_json
-            render json: messageJson
+            render json: { message: res.message }.to_json
         else
             # stateの検証がfalseだったら 
             puts checkstate
@@ -77,7 +75,6 @@ class UsersController < ApplicationController
             twitter_name: usersdata['data']['username'],
             twitter_profile_image: usersdata['data']['profile_image_url'],
             twitter_description: usersdata['data']['description'],
-            token: session[:accessToken]
         ]
         User.upsert_all(users,unique_by: :twitter_system_id)
     end
