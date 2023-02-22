@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_21_065935) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_22_065906) do
   create_table "creators", force: :cascade do |t|
     t.string "twitter_system_id"
     t.string "twitter_id"
@@ -22,4 +22,16 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_21_065935) do
     t.index ["twitter_system_id"], name: "index_creators_on_twitter_system_id", unique: true
   end
 
+  create_table "demo_data", force: :cascade do |t|
+    t.string "title"
+    t.text "caption"
+    t.string "image_url"
+    t.integer "creator_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["creator_id", "created_at"], name: "index_demo_data_on_creator_id_and_created_at"
+    t.index ["creator_id"], name: "index_demo_data_on_creator_id"
+  end
+
+  add_foreign_key "demo_data", "creators"
 end
