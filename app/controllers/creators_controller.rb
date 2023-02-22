@@ -1,5 +1,5 @@
-class CreatorController < ApplicationController
-
+class CreatorsController < ApplicationController
+    
     include ActionController::Cookies
     require 'base64'
     require 'net/http'
@@ -69,7 +69,8 @@ class CreatorController < ApplicationController
         render json: senddataJson
         # ユーザーを登録する
         creatordata = JSON.parse(res.body)
-        creator = [    twitter_system_id: creatordata['data']['id'],
+        creator = [
+            twitter_system_id: creatordata['data']['id'],
             twitter_id: creatordata['data']['name'],
             twitter_name: creatordata['data']['username'],
             twitter_profile_image: creatordata['data']['profile_image_url'],
