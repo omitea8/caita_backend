@@ -1,5 +1,5 @@
-class UsersController < ApplicationController
-
+class CreatorsController < ApplicationController
+    
     include ActionController::Cookies
     require 'base64'
     require 'net/http'
@@ -68,15 +68,14 @@ class UsersController < ApplicationController
         senddataJson = senddata.to_json
         render json: senddataJson
         # ユーザーを登録する
-        usersdata = JSON.parse(res.body)
-        users = [
-            twitter_system_id: usersdata['data']['id'],
-            twitter_id: usersdata['data']['name'],
-            twitter_name: usersdata['data']['username'],
-            twitter_profile_image: usersdata['data']['profile_image_url'],
-            twitter_description: usersdata['data']['description'],
+        creatordata = JSON.parse(res.body)
+        creator = [
+            twitter_system_id: creatordata['data']['id'],
+            twitter_id: creatordata['data']['name'],
+            twitter_name: creatordata['data']['username'],
+            twitter_profile_image: creatordata['data']['profile_image_url'],
+            twitter_description: creatordata['data']['description'],
         ]
-        User.upsert_all(users,unique_by: :twitter_system_id)
+        Creator.upsert_all(creator, unique_by: :twitter_system_id)
     end
-
 end
