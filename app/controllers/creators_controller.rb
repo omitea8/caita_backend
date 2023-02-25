@@ -64,18 +64,33 @@ class CreatorsController < ApplicationController
         res = http.get(uri, headers)
         # frontednに任意のデータを送る
         body = JSON.parse(res.body)
-        senddata = body['data'].extract!( 'username', 'profile_image_url', 'description')
+        senddata = body['data'].extract!( 'name', 'profile_image_url', 'description')
         senddataJson = senddata.to_json
         render json: senddataJson
         # ユーザーを登録する
         creatordata = JSON.parse(res.body)
         creator = [
             twitter_system_id: creatordata['data']['id'],
-            twitter_id: creatordata['data']['name'],
-            twitter_name: creatordata['data']['username'],
+            twitter_id: creatordata['data']['username'],
+            twitter_name: creatordata['data']['name'],
             twitter_profile_image: creatordata['data']['profile_image_url'],
             twitter_description: creatordata['data']['description'],
         ]
         Creator.upsert_all(creator, unique_by: :twitter_system_id)
+    end
+
+    def creator
+        creator = Creator.find_by(twitter_id: params[:creatorID])
+        puts params[:creator_id]
+        senddata = {
+            twitter_name: creator.twitter_name,
+            twitter_profile_image: creator.twitter_profile_image,
+            twitter_description: creator.twitter_description
+        }
+        render json: senddata.to_json
+    end
+
+    def imagedata
+        render json: Image.where(creator_id: "1").to_json
     end
 end
