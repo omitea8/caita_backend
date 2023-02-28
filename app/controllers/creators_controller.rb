@@ -80,16 +80,11 @@ class CreatorsController < ApplicationController
 
   def creator
     creator = Creator.find_by(twitter_id: params[:creatorID])
-    puts params[:creator_id]
     senddata = {
       twitter_name: creator.twitter_name,
       twitter_profile_image: creator.twitter_profile_image,
       twitter_description: creator.twitter_description
     }
     render json: senddata.to_json
-  end
-
-  def imagedata
-    render json: Image.where(creator_id: '1').to_json
   end
 end
