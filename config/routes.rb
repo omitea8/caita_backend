@@ -3,5 +3,6 @@ Rails.application.routes.draw do
   post 'creators/gettoken'
   get 'creators/getprofile'
   get 'creators/:creatorID', to: 'creators#creator'
-  get 'images/:creatorID', to: 'images#imagedata'
+  get 'images/creator/:creatorID', to: 'images#imagelist'
+  get 'images/:imageID', to: 'images#imagedata'
 end
