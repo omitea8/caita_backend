@@ -1,5 +1,18 @@
 class ImagesController < ApplicationController
+  def imagelist
+    creator = Creator.find_by(twitter_id: params[:creatorID])
+    senddata = Image.where(creator_id: creator.id).select(:title, :caption, :image_url, :id)
+    render json: senddata.to_json
+  end
+
   def imagedata
-    render json: Image.where(creator_id: '1').to_json
+    image = Image.find_by(id: params[:imageID])
+    senddata = {
+      title: image.title,
+      caption: image.caption,
+      image_url: image.image_url,
+      created_at: image.created_at
+    }
+    render json: senddata.to_json
   end
 end
