@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_24_065345) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_24_061801) do
   create_table "creators", force: :cascade do |t|
     t.string "twitter_system_id"
     t.string "twitter_id"
