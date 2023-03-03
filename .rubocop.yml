@@ -9,3 +9,10 @@ Style/FrozenStringLiteralComment:
 # ドキュメントのないpublic classを許可
 Style/Documentation:
   Enabled: false
+# コントローラ等のモジュールをネストしての宣言
+Style/ClassAndModuleChildren:
+  Enabled: false
+# シンボルによる配列の%記法のチェック
+Style/SymbolArray:
+  Enabled: false
+  # EnforcedStyle: brackets

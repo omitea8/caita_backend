@@ -1,3 +1,7 @@
+# 1メソッドの行数
 Metrics/MethodLength:
   CountComments: true # count full line comments?
   Max: 50
+# 1行あたりの文字数
+Layout/LineLength:
+  Enabled: false

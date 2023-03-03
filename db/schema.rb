@@ -10,28 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_24_061801) do
-  create_table "creators", force: :cascade do |t|
-    t.string "twitter_system_id"
-    t.string "twitter_id"
-    t.string "twitter_name"
-    t.string "twitter_profile_image"
-    t.string "twitter_description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["twitter_system_id"], name: "index_creators_on_twitter_system_id", unique: true
+ActiveRecord::Schema[7.0].define(version: 20_230_224_061_801) do
+  create_table 'creators', force: :cascade do |t|
+    t.string 'twitter_system_id'
+    t.string 'twitter_id'
+    t.string 'twitter_name'
+    t.string 'twitter_profile_image'
+    t.string 'twitter_description'
+    t.datetime 'created_at', null: false
+    t.datetime 'updated_at', null: false
+    t.index ['twitter_system_id'], name: 'index_creators_on_twitter_system_id', unique: true
   end
 
-  create_table "images", force: :cascade do |t|
-    t.string "title"
-    t.text "caption"
-    t.string "image_url"
-    t.integer "creator_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["creator_id", "created_at"], name: "index_images_on_creator_id_and_created_at"
-    t.index ["creator_id"], name: "index_images_on_creator_id"
+  create_table 'images', force: :cascade do |t|
+    t.string 'title'
+    t.text 'caption'
+    t.string 'image_url'
+    t.integer 'creator_id', null: false
+    t.datetime 'created_at', null: false
+    t.datetime 'updated_at', null: false
+    t.index %w[creator_id created_at], name: 'index_images_on_creator_id_and_created_at'
+    t.index ['creator_id'], name: 'index_images_on_creator_id'
   end
 
-  add_foreign_key "images", "creators"
+  add_foreign_key 'images', 'creators'
 end
