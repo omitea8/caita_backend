@@ -7,10 +7,10 @@ class CreatorsController < ApplicationController
   def login
     state = SecureRandom.hex(16)
     session[:state] = state
-    challengeVerifier = SecureRandom.alphanumeric(50)
-    session[:challengeVerifier] = challengeVerifier
-    challengeHash = Digest::SHA256.digest(challengeVerifier)
-    challenge = Base64.urlsafe_encode64(challengeHash, padding: false)
+    challenge_verifier = SecureRandom.alphanumeric(50)
+    session[:challengeVerifier] = challenge_verifier
+    challenge_hash = Digest::SHA256.digest(challenge_verifier)
+    challenge = Base64.urlsafe_encode64(challenge_hash, padding: false)
     render json: { url: 'https://twitter.com/i/oauth2/authorize?' \
                         'response_type=code' \
                         "&client_id=#{ENV.fetch('CLIENT_ID', nil)}" \
@@ -39,7 +39,7 @@ class CreatorsController < ApplicationController
                         })
       http = Net::HTTP.new(url.host, 443)
       http.use_ssl = true
-      res = http.start { |http| http.request(req) }
+      res = http.start { |h| h.request(req) }
       json = JSON.parse(res.body)
       # アクセストークンをsessionに保存
       session[:accessToken] = json['access_token']
@@ -64,8 +64,8 @@ class CreatorsController < ApplicationController
     # frontednに任意のデータを送る
     body = JSON.parse(res.body)
     senddata = body['data'].extract!('name', 'profile_image_url', 'description')
-    senddataJson = senddata.to_json
-    render json: senddataJson
+    senddata_json = senddata.to_json
+    render json: senddata_json
     # ユーザーを登録する
     creatordata = JSON.parse(res.body)
     creator = [

@@ -1,4 +1,11 @@
+#
 inherit_from: .rubocop_todo.yml
-
+#
 AllCops:
   NewCops: enable
+# 文字列をフリーズする設定を無視
+Style/FrozenStringLiteralComment:
+  Enabled: false
+# ドキュメントのないpublic classを許可
+Style/Documentation:
+  Enabled: false
