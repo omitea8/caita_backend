@@ -3,6 +3,9 @@ inherit_from: .rubocop_todo.yml
 #
 AllCops:
   NewCops: enable
+  # 除外ファイル
+  Exclude:
+    - "bin/bundle"
 # 文字列をフリーズする設定を無視
 Style/FrozenStringLiteralComment:
   Enabled: false
