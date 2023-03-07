@@ -21,29 +21,36 @@ class CreatorsController < ApplicationController
                         '&code_challenge_method=S256' }
   end
 
-  def gettoken
+  def request_url(client_id, client_secret, code, challenge, callback_url)
+    # リクエストトークンの作成
+    url = URI.parse('https://api.twitter.com/2/oauth2/token')
+    req = Net::HTTP::Post.new(url.path)
+    req.basic_auth client_id, client_secret
+    req.set_form_data({
+                        'grant_type' => 'authorization_code',
+                        'client_id' => client_id,
+                        'code' => code,
+                        'code_verifier' => challenge,
+                        'redirect_uri' => callback_url
+                      })
+    http = Net::HTTP.new(url.host, 443)
+    http.use_ssl = true
+    http.start { |h| h.request(req) }
+  end
+
+  def gettoken # rubocop:disable Metrics/AbcSize
     # stateの検証
     checkstate = params[:state].match?(session[:state])
     # stateの検証がtrueだったら
     return unless checkstate == true
 
-    # リクエストトークンの作成
-    url = URI.parse('https://api.twitter.com/2/oauth2/token')
-    req = Net::HTTP::Post.new(url.path)
-    req.basic_auth ENV.fetch('CLIENT_ID', nil), ENV.fetch('CLIENT_SECRET', nil)
-    req.set_form_data({
-                        'grant_type' => 'authorization_code',
-                        'client_id' => ENV.fetch('CLIENT_ID', nil),
-                        'code' => params[:code],
-                        'code_verifier' => session[:challengeVerifier],
-                        'redirect_uri' => ENV.fetch('TWITTER_CALLBACK_URL', nil)
-                      })
-    http = Net::HTTP.new(url.host, 443)
-    http.use_ssl = true
-    res = http.start { |h| h.request(req) }
-    json = JSON.parse(res.body)
+    res = request_url(ENV.fetch('CLIENT_ID', nil),
+                      ENV.fetch('CLIENT_SECRET', nil),
+                      params[:code],
+                      session[:challengeVerifier],
+                      ENV.fetch('TWITTER_CALLBACK_URL', nil))
     # アクセストークンをsessionに保存
-    session[:accessToken] = json['access_token']
+    session[:accessToken] = JSON.parse(res.body)['access_token']
     # フロントエンドにログイン成功を送る
     render json: { message: res.message }.to_json
   end
