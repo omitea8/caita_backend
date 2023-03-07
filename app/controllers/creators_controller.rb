@@ -23,7 +23,10 @@ class CreatorsController < ApplicationController
 
   def gettoken
     # stateの検証
-    checkstate = params[:state] === session[:state]
+    checkstate = params[:state].match?(session[:state])
+    puts params[:statte]
+    puts session[:state]
+    puts checkstate
     # stateの検証がtrueだったら
     if checkstate == true
       # リクエストトークンの作成
