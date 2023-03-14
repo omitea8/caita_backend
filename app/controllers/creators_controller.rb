@@ -71,7 +71,7 @@ class CreatorsController < ApplicationController
   def getprofile
     # frontednに任意のデータを送る
     body = getme(session[:accessToken])['data']
-    render json: body.extract!('name', 'profile_image_url', 'description').to_json
+    render json: body.slice('name', 'profile_image_url', 'description').to_json
     # ユーザーを登録する
     creator = [
       twitter_system_id: body['id'],
@@ -80,6 +80,7 @@ class CreatorsController < ApplicationController
       twitter_profile_image: body['profile_image_url'],
       twitter_description: body['description']
     ]
+
     Creator.upsert_all(creator, unique_by: :twitter_system_id)
   end
 
