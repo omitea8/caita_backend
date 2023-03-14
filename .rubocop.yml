@@ -1,4 +1,22 @@
+# rubocop_todoを親に指定
 inherit_from: .rubocop_todo.yml
-
+# rubocopの最新バージョンで追加された警告を有効化する
 AllCops:
   NewCops: enable
+  # 除外ファイル
+  Exclude:
+    - "bin/bundle"
+    - "db/**"
+# 文字列をフリーズする設定を無視
+Style/FrozenStringLiteralComment:
+  Enabled: false
+# ドキュメントのないpublic classを許可
+Style/Documentation:
+  Enabled: false
+# コントローラ等のモジュールをネストしての宣言
+Style/ClassAndModuleChildren:
+  Enabled: false
+# シンボルによる配列の%記法のチェック
+Style/SymbolArray:
+  Enabled: false
+  # EnforcedStyle: brackets

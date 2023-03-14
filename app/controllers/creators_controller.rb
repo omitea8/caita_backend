@@ -7,10 +7,10 @@ class CreatorsController < ApplicationController
   def login
     state = SecureRandom.hex(16)
     session[:state] = state
-    challengeVerifier = SecureRandom.alphanumeric(50)
-    session[:challengeVerifier] = challengeVerifier
-    challengeHash = Digest::SHA256.digest(challengeVerifier)
-    challenge = Base64.urlsafe_encode64(challengeHash, padding: false)
+    challenge_verifier = SecureRandom.alphanumeric(50)
+    session[:challengeVerifier] = challenge_verifier
+    challenge_hash = Digest::SHA256.digest(challenge_verifier)
+    challenge = Base64.urlsafe_encode64(challenge_hash, padding: false)
     render json: { url: 'https://twitter.com/i/oauth2/authorize?' \
                         'response_type=code' \
                         "&client_id=#{ENV.fetch('CLIENT_ID', nil)}" \
@@ -21,60 +21,66 @@ class CreatorsController < ApplicationController
                         '&code_challenge_method=S256' }
   end
 
-  def gettoken
-    # stateの検証
-    checkstate = params[:state] === session[:state]
-    # stateの検証がtrueだったら
-    if checkstate == true
-      # リクエストトークンの作成
-      url = URI.parse('https://api.twitter.com/2/oauth2/token')
-      req = Net::HTTP::Post.new(url.path)
-      req.basic_auth ENV.fetch('CLIENT_ID', nil), ENV.fetch('CLIENT_SECRET', nil)
-      req.set_form_data({
-                          'grant_type' => 'authorization_code',
-                          'client_id' => ENV.fetch('CLIENT_ID', nil),
-                          'code' => params[:code],
-                          'code_verifier' => session[:challengeVerifier],
-                          'redirect_uri' => ENV.fetch('TWITTER_CALLBACK_URL', nil)
-                        })
-      http = Net::HTTP.new(url.host, 443)
-      http.use_ssl = true
-      res = http.start { |http| http.request(req) }
-      json = JSON.parse(res.body)
-      # アクセストークンをsessionに保存
-      session[:accessToken] = json['access_token']
-      # フロントエンドにログイン成功を送る
-      render json: { message: res.message }.to_json
-    else
-      # stateの検証がfalseだったら
-      puts checkstate
-    end
+  def request_url(client_id, client_secret, code, challenge, callback_url)
+    # リクエストトークンの作成
+    url = URI.parse('https://api.twitter.com/2/oauth2/token')
+    req = Net::HTTP::Post.new(url.path)
+    req.basic_auth client_id, client_secret
+    req.set_form_data({
+                        'grant_type' => 'authorization_code',
+                        'client_id' => client_id,
+                        'code' => code,
+                        'code_verifier' => challenge,
+                        'redirect_uri' => callback_url
+                      })
+    http = Net::HTTP.new(url.host, 443)
+    http.use_ssl = true
+    http.start { |h| h.request(req) }
   end
 
-  def getprofile
-    # twitterのプロフィール情報を取得
+  def gettoken # rubocop:disable Metrics/AbcSize
+    # stateの検証
+    checkstate = params[:state].match?(session[:state])
+    # stateの検証がtrueだったら
+    return unless checkstate == true
+
+    res = request_url(ENV.fetch('CLIENT_ID', nil),
+                      ENV.fetch('CLIENT_SECRET', nil),
+                      params[:code],
+                      session[:challengeVerifier],
+                      ENV.fetch('TWITTER_CALLBACK_URL', nil))
+    # アクセストークンをsessionに保存
+    session[:accessToken] = JSON.parse(res.body)['access_token']
+    # フロントエンドにログイン成功を送る
+    render json: { message: res.message }.to_json
+  end
+
+  def getme(access_token)
+    # プロフィール情報を取得
     uri = URI.parse('https://api.twitter.com/2/users/me')
     uri.query = URI.encode_www_form({ 'user.fields': 'description,profile_image_url' })
     headers = {
-      'Authorization' => "Bearer #{session[:accessToken]}"
+      'Authorization' => "Bearer #{access_token}"
     }
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     res = http.get(uri, headers)
+    JSON.parse(res.body)
+  end
+
+  def getprofile
     # frontednに任意のデータを送る
-    body = JSON.parse(res.body)
-    senddata = body['data'].extract!('name', 'profile_image_url', 'description')
-    senddataJson = senddata.to_json
-    render json: senddataJson
+    body = getme(session[:accessToken])['data']
+    render json: body.slice('name', 'profile_image_url', 'description').to_json
     # ユーザーを登録する
-    creatordata = JSON.parse(res.body)
     creator = [
-      twitter_system_id: creatordata['data']['id'],
-      twitter_id: creatordata['data']['username'],
-      twitter_name: creatordata['data']['name'],
-      twitter_profile_image: creatordata['data']['profile_image_url'],
-      twitter_description: creatordata['data']['description']
+      twitter_system_id: body['id'],
+      twitter_id: body['username'],
+      twitter_name: body['name'],
+      twitter_profile_image: body['profile_image_url'],
+      twitter_description: body['description']
     ]
+
     Creator.upsert_all(creator, unique_by: :twitter_system_id)
   end
 
