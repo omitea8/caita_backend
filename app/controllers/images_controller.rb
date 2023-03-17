@@ -14,4 +14,19 @@ class ImagesController < ApplicationController
     }
     render json: senddata.to_json
   end
+
+  def post
+    current_creator
+    unless logged_in
+      render json: 'NG'.to_json
+      return
+    end
+
+    image = Image.new(caption: params[:caption], creator_id: @current_creator.id)
+    if image.save
+      render json: 'OK'.to_json
+    else
+      rendar json: 'NG'.to_json
+    end
+  end
 end

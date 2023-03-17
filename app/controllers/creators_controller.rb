@@ -68,7 +68,7 @@ class CreatorsController < ApplicationController
     JSON.parse(res.body)
   end
 
-  def getprofile
+  def getprofile # rubocop:disable Metrics/AbcSize
     # frontednに任意のデータを送る
     body = getme(session[:accessToken])['data']
     render json: body.slice('name', 'profile_image_url', 'description').to_json
@@ -80,8 +80,8 @@ class CreatorsController < ApplicationController
       twitter_profile_image: body['profile_image_url'],
       twitter_description: body['description']
     ]
-
     Creator.upsert_all(creator, unique_by: :twitter_system_id)
+    session[:id] = Creator.find_by(twitter_system_id: body['id']).id
   end
 
   def creator
