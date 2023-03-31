@@ -40,6 +40,7 @@ class ImagesController < ApplicationController
     post_data = Image.new(caption: params[:caption], creator_id: @current_creator.id)
     if post_data.save
       upload_to_aws(params[:image], post_data.id.to_s)
+      post_data.update(image_url: "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{post_data.id}")
       render json: 'OK'.to_json
     else
       render json: 'NG'.to_json
