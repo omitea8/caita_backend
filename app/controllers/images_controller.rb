@@ -1,3 +1,5 @@
+require 'aws-sdk-s3'
+
 class ImagesController < ApplicationController
   def imagelist
     creator = Creator.find_by(twitter_id: params[:creatorID])
@@ -15,18 +17,33 @@ class ImagesController < ApplicationController
     render json: senddata.to_json
   end
 
+  def upload_to_aws(image, key)
+    client = Aws::S3::Client.new(
+      region: 'ap-northeast-1'.freeze,
+      access_key_id: ENV.fetch('AWS_ACCESS_KEY'),
+      secret_access_key: ENV.fetch('AWS_SECRET_KEY')
+    )
+    client.put_object(
+      bucket: 'caitaimage',
+      key: key,
+      body: image,
+      content_type: 'image/png'
+    )
+  end
+
   def post
     current_creator
     unless logged_in
       render json: 'NG'.to_json
       return
     end
+    post_data = Image.new(caption: params[:caption], creator_id: @current_creator.id)
+    if post_data.save
+      upload_to_aws(params[:image], post_data.id.to_s)
 
-    image = Image.new(caption: params[:caption], creator_id: @current_creator.id)
-    if image.save
       render json: 'OK'.to_json
     else
-      rendar json: 'NG'.to_json
+      render json: 'NG'.to_json
     end
   end
 end
