@@ -19,12 +19,12 @@ class ImagesController < ApplicationController
 
   def upload_to_aws(image, key)
     client = Aws::S3::Client.new(
-      region: 'ap-northeast-1'.freeze,
+      region: ENV.fetch('AWS_REGION').freeze,
       access_key_id: ENV.fetch('AWS_ACCESS_KEY'),
       secret_access_key: ENV.fetch('AWS_SECRET_KEY')
     )
     client.put_object(
-      bucket: 'caitaimage',
+      bucket: ENV.fetch('AWS_BUCKET'),
       key: key,
       body: image,
       content_type: 'image/png'
@@ -40,7 +40,6 @@ class ImagesController < ApplicationController
     post_data = Image.new(caption: params[:caption], creator_id: @current_creator.id)
     if post_data.save
       upload_to_aws(params[:image], post_data.id.to_s)
-
       render json: 'OK'.to_json
     else
       render json: 'NG'.to_json
