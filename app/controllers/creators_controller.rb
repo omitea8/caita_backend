@@ -69,7 +69,7 @@ class CreatorsController < ApplicationController
   end
 
   def getprofile # rubocop:disable Metrics/AbcSize
-    # frontednに任意のデータを送る
+    # frontendに任意のデータを送る
     body = getme(session[:accessToken])['data']
     render json: body.slice('name', 'profile_image_url', 'description').to_json
     # ユーザーを登録する
