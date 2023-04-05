@@ -11,7 +11,6 @@ gem 'sqlite3', '~> 1.4'
 
 # Use the Puma web server [https://github.com/puma/puma]
 gem 'puma', '~> 5.0'
-
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]
 
@@ -19,6 +18,7 @@ gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]
 gem 'bootsnap', require: false
 
 # I put in
+gem 'aws-sdk-s3', '~> 1.0.0.rc2'
 gem 'dotenv-rails'
 gem 'faker'
 gem 'rack-cors'
