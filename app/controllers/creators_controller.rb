@@ -38,7 +38,7 @@ class CreatorsController < ApplicationController
     http.start { |h| h.request(req) }
   end
 
-  def gettoken # rubocop:disable Metrics/AbcSize
+  def get_token # rubocop:disable Metrics/AbcSize
     # stateの検証
     checkstate = params[:state].match?(session[:state])
     # stateの検証がtrueだったら
