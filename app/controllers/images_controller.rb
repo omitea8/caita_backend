@@ -31,13 +31,17 @@ class ImagesController < ApplicationController
     )
   end
 
-  def post
+  def create_post_data(params)
+    Image.new(caption: params[:caption], creator_id: @current_creator.id)
+  end
+
+  def post # rubocop:disable Metrics/AbcSize
     current_creator
     unless logged_in
       render json: 'NG'.to_json
       return
     end
-    post_data = Image.new(caption: params[:caption], creator_id: @current_creator.id)
+    post_data = create_post_data(params)
     if post_data.save
       upload_to_aws(params[:image], post_data.id.to_s)
       post_data.update(image_url: "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{post_data.id}")
