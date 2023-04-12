@@ -68,7 +68,7 @@ class CreatorsController < ApplicationController
     JSON.parse(res.body)
   end
 
-  def getprofile # rubocop:disable Metrics/AbcSize
+  def profile_get # rubocop:disable Metrics/AbcSize
     # frontendに任意のデータを送る
     body = getme(session[:accessToken])['data']
     render json: body.slice('name', 'profile_image_url', 'description').to_json
