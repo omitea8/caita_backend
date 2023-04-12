@@ -3,7 +3,7 @@ require 'aws-sdk-s3'
 class ImagesController < ApplicationController
   def imagelist
     creator = Creator.find_by(twitter_id: params[:creatorID])
-    senddata = Image.where(creator_id: creator.id).select(:caption, :image_url, :id)
+    senddata = Image.where(creator_id: creator.id).select(:caption, :image_url, :id).order(created_at: :desc)
     render json: senddata.to_json
   end
 
