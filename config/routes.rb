@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   get 'creators/login'
-  post 'creators/gettoken'
-  get 'creators/getprofile'
+  post 'creators/token_get'
+  get 'creators/profile_get'
   post 'images/post'
   get 'creators/:creatorID', to: 'creators#creator'
   get 'images/creator/:creatorID', to: 'images#imagelist'

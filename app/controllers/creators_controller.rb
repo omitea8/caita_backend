@@ -38,7 +38,7 @@ class CreatorsController < ApplicationController
     http.start { |h| h.request(req) }
   end
 
-  def gettoken # rubocop:disable Metrics/AbcSize
+  def token_get # rubocop:disable Metrics/AbcSize
     # stateの検証
     checkstate = params[:state].match?(session[:state])
     # stateの検証がtrueだったら
@@ -68,7 +68,7 @@ class CreatorsController < ApplicationController
     JSON.parse(res.body)
   end
 
-  def getprofile # rubocop:disable Metrics/AbcSize
+  def profile_get # rubocop:disable Metrics/AbcSize
     # frontendに任意のデータを送る
     body = getme(session[:accessToken])['data']
     render json: body.slice('name', 'profile_image_url', 'description').to_json
