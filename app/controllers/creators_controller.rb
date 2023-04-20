@@ -71,7 +71,7 @@ class CreatorsController < ApplicationController
   def profile_get # rubocop:disable Metrics/AbcSize
     # frontendに任意のデータを送る
     body = getme(session[:accessToken])['data']
-    render json: body.slice('name', 'profile_image_url', 'description').to_json
+    render json: body.slice('name', 'profile_image_url', 'description', 'username').to_json
     # ユーザーを登録する
     creator = [
       twitter_system_id: body['id'],
