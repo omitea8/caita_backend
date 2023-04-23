@@ -93,4 +93,13 @@ class CreatorsController < ApplicationController
     }
     render json: senddata.to_json
   end
+
+  def icon_image
+    current_creator
+    unless logged_in
+      render json: ''.to_json
+      return
+    end
+    render json: @current_creator.twitter_profile_image.to_json
+  end
 end
