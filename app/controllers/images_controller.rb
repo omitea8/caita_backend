@@ -41,13 +41,11 @@ class ImagesController < ApplicationController
   end
 
   # 画像を削除
-  def imagedelete # rubocop:disable Metrics/AbcSize
+  def imagedelete
     current_creator
     image = Image.find_by(id: params[:imageID])
     # 本人の画像か確認
     unless image.creator_id == @current_creator.id
-      puts image.creator_id
-      puts @current_creator.id
       render json: 'NG'.to_json
       return
     end
