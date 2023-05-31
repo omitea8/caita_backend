@@ -26,7 +26,7 @@ class ImagesController < ApplicationController
       render json: 'NG'.to_json
       return
     end
-    unless validate_image(params[:image])
+    unless validate_image(params[:image]) && validate_caption(params[:caption])
       render json: 'NG'.to_json
       return
     end
@@ -34,7 +34,7 @@ class ImagesController < ApplicationController
     if post_data.save
       upload_to_aws(params[:image], post_data.id.to_s)
       post_data.update(image_url: "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{post_data.id}")
-      render json: 'OK'.to_json
+      head :ok
     else
       render json: 'NG'.to_json
     end
@@ -52,6 +52,22 @@ class ImagesController < ApplicationController
     delete_to_aws(image, image.id.to_s)
     # DBから画像を削除
     image.destroy
+    head :ok
+  end
+
+  # 画像を更新
+  def imageupdate # rubocop:disable Metrics/AbcSize
+    current_creator
+    image = Image.find_by(id: params[:imageID])
+    # 本人の画像か確認
+    unless image.creator_id == @current_creator.id
+      render json: 'NG'.to_json
+      return
+    end
+    # AWSを更新
+    upload_to_aws(params[:image], image.id.to_s)
+    # DBを更新
+    image.update(caption: params[:caption])
     head :ok
   end
 
@@ -82,6 +98,11 @@ class ImagesController < ApplicationController
     image.is_a?(ActionDispatch::Http::UploadedFile) &&
       ['image/png', 'image/gif', 'image/jpeg'].include?(image.content_type) &&
       image.size <= 20.megabytes
+  end
+
+  # キャプションのバリデーション
+  def validate_caption(caption)
+    caption.is_a?(String) && caption.length <= 1000
   end
 
   # AWS S3から画像を削除

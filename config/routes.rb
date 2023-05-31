@@ -8,4 +8,5 @@ Rails.application.routes.draw do
   post 'images/post'
   get 'images/:imageID', to: 'images#imagedata'
   delete 'images/:imageID', to: 'images#imagedelete'
+  put 'images/:imageID', to: 'images#imageupdate'
 end
