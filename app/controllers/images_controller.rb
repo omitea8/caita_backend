@@ -65,7 +65,7 @@ class ImagesController < ApplicationController
       return
     end
     # AWSを更新
-    upload_to_aws(params[:image], image.id.to_s)
+    upload_to_aws(params[:image], image.id.to_s) if params[:image].present?
     # DBを更新
     image.update(caption: params[:caption])
     head :ok
@@ -84,7 +84,8 @@ class ImagesController < ApplicationController
       bucket: ENV.fetch('AWS_BUCKET'),
       key: key,
       body: image,
-      content_type: 'image/png'
+      content_type: 'image/png',
+      cache_control: 'no-cache, no-store, must-revalidate'
     )
   end
 
