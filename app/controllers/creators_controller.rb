@@ -65,6 +65,9 @@ class CreatorsController < ApplicationController
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     res = http.get(uri, headers)
+    puts res.header['x-rate-limit-remaining'].to_i
+    puts res.header['x-rate-limit-reset'].to_i
+
     JSON.parse(res.body)
   end
 
