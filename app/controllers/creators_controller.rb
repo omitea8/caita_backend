@@ -4,8 +4,7 @@ class CreatorsController < ApplicationController
   require 'net/http'
   require 'uri'
 
-  # TODO: 名前変えたい
-  def login
+  def login_url
     state = SecureRandom.hex(16)
     session[:state] = state
     challenge_verifier = SecureRandom.alphanumeric(50)
@@ -22,20 +21,20 @@ class CreatorsController < ApplicationController
                         '&code_challenge_method=S256' }
   end
 
-  # TODO: 名前変えたい
-  def token_get # rubocop:disable Metrics/AbcSize
+  def handle_token_callback # rubocop:disable Metrics/AbcSize
     # stateの検証
     checkstate = params[:state].match?(session[:state])
-    # stateの検証がtrueだったら
     return unless checkstate == true
 
-    res = request_url(ENV.fetch('CLIENT_ID', nil),
-                      ENV.fetch('CLIENT_SECRET', nil),
-                      params[:code],
-                      session[:challengeVerifier],
-                      ENV.fetch('TWITTER_CALLBACK_URL', nil))
+    res = send_token_request(
+      ENV.fetch('CLIENT_ID', nil),
+      ENV.fetch('CLIENT_SECRET', nil),
+      params[:code],
+      session[:challengeVerifier],
+      ENV.fetch('TWITTER_CALLBACK_URL', nil)
+    )
     # アクセストークンを取得
-    body = getme(JSON.parse(res.body)['access_token'])['data']
+    body = fetch_user_data(JSON.parse(res.body)['access_token'])['data']
     # ユーザーをDBに登録する
     creator = [
       twitter_system_id: body['id'],
@@ -48,12 +47,12 @@ class CreatorsController < ApplicationController
 
     session[:id] = Creator.find_by(twitter_system_id: body['id']).id
 
-    # フロントエンドにログイン成功を送る
+    # フロントエンドにログイン可否を送る
     render json: { message: res.message }.to_json
   end
 
   # リクエストトークンの作成
-  def request_url(client_id, client_secret, code, challenge, callback_url)
+  def send_token_request(client_id, client_secret, code, challenge, callback_url)
     url = URI.parse('https://api.twitter.com/2/oauth2/token')
     req = Net::HTTP::Post.new(url.path)
     req.basic_auth client_id, client_secret
@@ -69,8 +68,8 @@ class CreatorsController < ApplicationController
     http.start { |h| h.request(req) }
   end
 
-  # twitterからプロフィール情報を取得
-  def getme(access_token) # rubocop:disable Metrics/AbcSize
+  # twitterからユーザー情報を取得
+  def fetch_user_data(access_token) # rubocop:disable Metrics/AbcSize
     uri = URI.parse('https://api.twitter.com/2/users/me')
     uri.query = URI.encode_www_form({ 'user.fields': 'description,profile_image_url' })
     headers = {
@@ -86,30 +85,29 @@ class CreatorsController < ApplicationController
     JSON.parse(res.body)
   end
 
-  # TODO: 名前変えたい
-  # ユーザー情報をDBから取得(caitaのシステムIDを使って)
-  def profile_get
+  # ログインクリエイター情報をDBから取得
+  def current_creator_profile
     # session[:id]を使ってクリエイターを探す
     creator = Creator.find_by(id: session[:id])
     # frontendに任意のデータを送る
-    senddata = {
+    data = {
       name: creator.twitter_name,
       username: creator.twitter_id,
       profile_image_url: creator.twitter_profile_image,
       description: creator.twitter_description
     }
-    render json: senddata.to_json
+    render json: data.to_json
   end
 
-  # ユーザー情報をDBから取得(creatorIDを使って)
-  def creator
+  # クリエイター情報をDBから取得
+  def creator_profile
     creator = Creator.find_by(twitter_id: params[:creatorID])
-    senddata = {
+    data = {
       twitter_name: creator.twitter_name,
       twitter_profile_image: creator.twitter_profile_image,
       twitter_description: creator.twitter_description
     }
-    render json: senddata.to_json
+    render json: data.to_json
   end
 
   # ユーザー情報をDBから取得(profile_imageのみ)

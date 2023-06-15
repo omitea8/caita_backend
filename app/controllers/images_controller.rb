@@ -41,7 +41,7 @@ class ImagesController < ApplicationController
   end
 
   # 画像を削除
-  def imagedelete
+  def delete
     current_creator
     image = Image.find_by(id: params[:imageID])
     # 本人の画像か確認
@@ -49,14 +49,14 @@ class ImagesController < ApplicationController
       render json: 'NG'.to_json
       return
     end
-    delete_to_aws(image, image.id.to_s)
+    delete_from_aws(image, image.id.to_s)
     # DBから画像を削除
     image.destroy
     head :ok
   end
 
   # 画像を更新
-  def imageupdate # rubocop:disable Metrics/AbcSize
+  def update # rubocop:disable Metrics/AbcSize
     current_creator
     image = Image.find_by(id: params[:imageID])
     # 本人の画像か確認
@@ -107,7 +107,7 @@ class ImagesController < ApplicationController
   end
 
   # AWS S3から画像を削除
-  def delete_to_aws(image, _key)
+  def delete_from_aws(image, _key)
     client = Aws::S3::Client.new(
       region: ENV.fetch('AWS_REGION').freeze,
       access_key_id: ENV.fetch('AWS_ACCESS_KEY'),
