@@ -109,14 +109,4 @@ class CreatorsController < ApplicationController
     }
     render json: data.to_json
   end
-
-  # ユーザー情報をDBから取得(profile_imageのみ)
-  def icon_image
-    current_creator
-    unless logged_in
-      render json: ''.to_json
-      return
-    end
-    render json: @current_creator.twitter_profile_image.to_json
-  end
 end
