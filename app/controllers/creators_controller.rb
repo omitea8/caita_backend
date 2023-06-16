@@ -33,7 +33,7 @@ class CreatorsController < ApplicationController
       ENV.fetch('TWITTER_CALLBACK_URL', nil)
     )
     body = fetch_user_data(JSON.parse(res.body)['access_token'])['data']
-    regester_creator(body)
+    register_creator(body)
     session[:id] = Creator.find_by(twitter_system_id: body['id']).id
     render json: { message: res.message }.to_json
   end
@@ -73,7 +73,7 @@ class CreatorsController < ApplicationController
   end
 
   # クリエイターをDBに登録
-  def regester_creator(body)
+  def register_creator(body)
     creator = [
       twitter_system_id: body['id'],
       twitter_id: body['username'],
