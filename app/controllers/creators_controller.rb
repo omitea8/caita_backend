@@ -32,7 +32,7 @@ class CreatorsController < ApplicationController
       session[:challengeVerifier],
       ENV.fetch('TWITTER_CALLBACK_URL', nil)
     )
-    body = fetch_user_data(JSON.parse(res.body)['access_token'])['data']
+    body = fetch_me_from_twitter(JSON.parse(res.body)['access_token'])['data']
     register_creator(body)
     session[:id] = Creator.find_by(twitter_system_id: body['id']).id
     render json: { message: res.message }.to_json
@@ -56,7 +56,7 @@ class CreatorsController < ApplicationController
   end
 
   # twitterからユーザー情報を取得
-  def fetch_user_data(access_token) # rubocop:disable Metrics/AbcSize
+  def fetch_me_from_twitter(access_token) # rubocop:disable Metrics/AbcSize
     uri = URI.parse('https://api.twitter.com/2/users/me')
     uri.query = URI.encode_www_form({ 'user.fields': 'description,profile_image_url' })
     headers = {
