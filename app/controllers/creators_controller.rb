@@ -72,18 +72,6 @@ class CreatorsController < ApplicationController
     JSON.parse(res.body)
   end
 
-  # クリエイターをDBに登録
-  def register_creator(body)
-    creator = [
-      twitter_system_id: body['id'],
-      twitter_id: body['username'],
-      twitter_name: body['name'],
-      twitter_profile_image: body['profile_image_url'],
-      twitter_description: body['description']
-    ]
-    Creator.upsert_all(creator, unique_by: :twitter_system_id)
-  end
-
   # ログインクリエイター情報をDBから取得
   def current_creator_profile
     # session[:id]を使ってクリエイターを探す
@@ -107,5 +95,19 @@ class CreatorsController < ApplicationController
       twitter_description: creator.twitter_description
     }
     render json: data.to_json
+  end
+
+  private
+
+  # クリエイターをDBに登録
+  def register_creator(body)
+    creator = [
+      twitter_system_id: body['id'],
+      twitter_id: body['username'],
+      twitter_name: body['name'],
+      twitter_profile_image: body['profile_image_url'],
+      twitter_description: body['description']
+    ]
+    Creator.upsert_all(creator, unique_by: :twitter_system_id)
   end
 end
