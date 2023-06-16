@@ -22,10 +22,7 @@ class CreatorsController < ApplicationController
   end
 
   def handle_token_callback # rubocop:disable Metrics/AbcSize
-    # stateの検証
-    checkstate = params[:state].match?(session[:state])
-    return unless checkstate == true
-
+    verify_state(params[:state])
     res = send_token_request(
       ENV.fetch('CLIENT_ID', nil),
       ENV.fetch('CLIENT_SECRET', nil),
@@ -33,21 +30,9 @@ class CreatorsController < ApplicationController
       session[:challengeVerifier],
       ENV.fetch('TWITTER_CALLBACK_URL', nil)
     )
-    # アクセストークンを取得
     body = fetch_user_data(JSON.parse(res.body)['access_token'])['data']
-    # ユーザーをDBに登録する
-    creator = [
-      twitter_system_id: body['id'],
-      twitter_id: body['username'],
-      twitter_name: body['name'],
-      twitter_profile_image: body['profile_image_url'],
-      twitter_description: body['description']
-    ]
-    Creator.upsert_all(creator, unique_by: :twitter_system_id)
-
+    regester_creator(body)
     session[:id] = Creator.find_by(twitter_system_id: body['id']).id
-
-    # フロントエンドにログイン可否を送る
     render json: { message: res.message }.to_json
   end
 
@@ -85,6 +70,18 @@ class CreatorsController < ApplicationController
     JSON.parse(res.body)
   end
 
+  # クリエイターをDBに登録
+  def regester_creator(body)
+    creator = [
+      twitter_system_id: body['id'],
+      twitter_id: body['username'],
+      twitter_name: body['name'],
+      twitter_profile_image: body['profile_image_url'],
+      twitter_description: body['description']
+    ]
+    Creator.upsert_all(creator, unique_by: :twitter_system_id)
+  end
+
   # ログインクリエイター情報をDBから取得
   def current_creator_profile
     # session[:id]を使ってクリエイターを探す
@@ -108,5 +105,13 @@ class CreatorsController < ApplicationController
       twitter_description: creator.twitter_description
     }
     render json: data.to_json
+  end
+
+  private
+
+  # stateの検証
+  def verify_state(state)
+    checkstate = state.match?(session[:state])
+    return unless checkstate == true
   end
 end
