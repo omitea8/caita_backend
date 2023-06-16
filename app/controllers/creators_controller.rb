@@ -22,7 +22,9 @@ class CreatorsController < ApplicationController
   end
 
   def handle_token_callback # rubocop:disable Metrics/AbcSize
-    verify_state(params[:state])
+    # stateの検証
+    return unless params[:state].match?(session[:state])
+
     res = send_token_request(
       ENV.fetch('CLIENT_ID', nil),
       ENV.fetch('CLIENT_SECRET', nil),
@@ -105,13 +107,5 @@ class CreatorsController < ApplicationController
       twitter_description: creator.twitter_description
     }
     render json: data.to_json
-  end
-
-  private
-
-  # stateの検証
-  def verify_state(state)
-    checkstate = state.match?(session[:state])
-    return unless checkstate == true
   end
 end
