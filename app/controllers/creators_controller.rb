@@ -38,7 +38,7 @@ class CreatorsController < ApplicationController
     render json: { message: res.message }.to_json
   end
 
-  # リクエストトークンの作成
+  # トークンをtwitterにリクエストする
   def send_token_request(client_id, client_secret, code, challenge, callback_url)
     url = URI.parse('https://api.twitter.com/2/oauth2/token')
     req = Net::HTTP::Post.new(url.path)
