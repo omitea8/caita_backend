@@ -41,7 +41,7 @@ class ImagesController < ApplicationController
   end
 
   # 画像を削除
-  def imagedelete
+  def delete
     current_creator
     image = Image.find_by(id: params[:imageID])
     # 本人の画像か確認
@@ -49,14 +49,14 @@ class ImagesController < ApplicationController
       render json: 'NG'.to_json
       return
     end
-    delete_to_aws(image, image.id.to_s)
+    delete_from_aws(image, image.id.to_s)
     # DBから画像を削除
     image.destroy
     head :ok
   end
 
   # 画像を更新
-  def imageupdate # rubocop:disable Metrics/AbcSize
+  def update # rubocop:disable Metrics/AbcSize
     current_creator
     image = Image.find_by(id: params[:imageID])
     # 本人の画像か確認
@@ -73,13 +73,18 @@ class ImagesController < ApplicationController
 
   private
 
-  # AWS S3に画像をアップロード
-  def upload_to_aws(image, key)
-    client = Aws::S3::Client.new(
+  # AWS S3のクライアントを設定
+  def create_s3_client
+    Aws::S3::Client.new(
       region: ENV.fetch('AWS_REGION').freeze,
       access_key_id: ENV.fetch('AWS_ACCESS_KEY'),
       secret_access_key: ENV.fetch('AWS_SECRET_KEY')
     )
+  end
+
+  # AWS S3に画像をアップロード
+  def upload_to_aws(image, key)
+    client = create_s3_client
     client.put_object(
       bucket: ENV.fetch('AWS_BUCKET'),
       key: key,
@@ -107,12 +112,8 @@ class ImagesController < ApplicationController
   end
 
   # AWS S3から画像を削除
-  def delete_to_aws(image, _key)
-    client = Aws::S3::Client.new(
-      region: ENV.fetch('AWS_REGION').freeze,
-      access_key_id: ENV.fetch('AWS_ACCESS_KEY'),
-      secret_access_key: ENV.fetch('AWS_SECRET_KEY')
-    )
+  def delete_from_aws(image, _key)
+    client = create_s3_client
     client.delete_object(
       bucket: ENV.fetch('AWS_BUCKET'),
       key: image.id.to_s

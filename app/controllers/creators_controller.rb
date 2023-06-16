@@ -4,7 +4,7 @@ class CreatorsController < ApplicationController
   require 'net/http'
   require 'uri'
 
-  def login
+  def login_url
     state = SecureRandom.hex(16)
     session[:state] = state
     challenge_verifier = SecureRandom.alphanumeric(50)
@@ -21,8 +21,25 @@ class CreatorsController < ApplicationController
                         '&code_challenge_method=S256' }
   end
 
-  def request_url(client_id, client_secret, code, challenge, callback_url)
-    # リクエストトークンの作成
+  def handle_token_callback # rubocop:disable Metrics/AbcSize
+    # stateの検証
+    return unless params[:state].match?(session[:state])
+
+    res = send_token_request(
+      ENV.fetch('CLIENT_ID', nil),
+      ENV.fetch('CLIENT_SECRET', nil),
+      params[:code],
+      session[:challengeVerifier],
+      ENV.fetch('TWITTER_CALLBACK_URL', nil)
+    )
+    body = fetch_me_from_twitter(JSON.parse(res.body)['access_token'])['data']
+    register_creator(body)
+    session[:id] = Creator.find_by(twitter_system_id: body['id']).id
+    render json: { message: res.message }.to_json
+  end
+
+  # トークンをtwitterにリクエストする
+  def send_token_request(client_id, client_secret, code, challenge, callback_url)
     url = URI.parse('https://api.twitter.com/2/oauth2/token')
     req = Net::HTTP::Post.new(url.path)
     req.basic_auth client_id, client_secret
@@ -38,25 +55,8 @@ class CreatorsController < ApplicationController
     http.start { |h| h.request(req) }
   end
 
-  def token_get # rubocop:disable Metrics/AbcSize
-    # stateの検証
-    checkstate = params[:state].match?(session[:state])
-    # stateの検証がtrueだったら
-    return unless checkstate == true
-
-    res = request_url(ENV.fetch('CLIENT_ID', nil),
-                      ENV.fetch('CLIENT_SECRET', nil),
-                      params[:code],
-                      session[:challengeVerifier],
-                      ENV.fetch('TWITTER_CALLBACK_URL', nil))
-    # アクセストークンをsessionに保存
-    session[:accessToken] = JSON.parse(res.body)['access_token']
-    # フロントエンドにログイン成功を送る
-    render json: { message: res.message }.to_json
-  end
-
-  def getme(access_token)
-    # プロフィール情報を取得
+  # twitterからユーザー情報を取得
+  def fetch_me_from_twitter(access_token) # rubocop:disable Metrics/AbcSize
     uri = URI.parse('https://api.twitter.com/2/users/me')
     uri.query = URI.encode_www_form({ 'user.fields': 'description,profile_image_url' })
     headers = {
@@ -65,14 +65,42 @@ class CreatorsController < ApplicationController
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     res = http.get(uri, headers)
+    # デバッグ用
+    puts res.header['x-rate-limit-remaining'].to_i
+    puts res.header['x-rate-limit-reset'].to_i
+
     JSON.parse(res.body)
   end
 
-  def profile_get # rubocop:disable Metrics/AbcSize
+  # ログインクリエイター情報をDBから取得
+  def current_creator_profile
+    # session[:id]を使ってクリエイターを探す
+    creator = Creator.find_by(id: session[:id])
     # frontendに任意のデータを送る
-    body = getme(session[:accessToken])['data']
-    render json: body.slice('name', 'profile_image_url', 'description', 'username').to_json
-    # ユーザーを登録する
+    data = {
+      name: creator.twitter_name,
+      username: creator.twitter_id,
+      profile_image_url: creator.twitter_profile_image,
+      description: creator.twitter_description
+    }
+    render json: data.to_json
+  end
+
+  # クリエイター情報をDBから取得
+  def creator_profile
+    creator = Creator.find_by(twitter_id: params[:creatorID])
+    data = {
+      twitter_name: creator.twitter_name,
+      twitter_profile_image: creator.twitter_profile_image,
+      twitter_description: creator.twitter_description
+    }
+    render json: data.to_json
+  end
+
+  private
+
+  # クリエイターをDBに登録
+  def register_creator(body)
     creator = [
       twitter_system_id: body['id'],
       twitter_id: body['username'],
@@ -81,25 +109,5 @@ class CreatorsController < ApplicationController
       twitter_description: body['description']
     ]
     Creator.upsert_all(creator, unique_by: :twitter_system_id)
-    session[:id] = Creator.find_by(twitter_system_id: body['id']).id
-  end
-
-  def creator
-    creator = Creator.find_by(twitter_id: params[:creatorID])
-    senddata = {
-      twitter_name: creator.twitter_name,
-      twitter_profile_image: creator.twitter_profile_image,
-      twitter_description: creator.twitter_description
-    }
-    render json: senddata.to_json
-  end
-
-  def icon_image
-    current_creator
-    unless logged_in
-      render json: ''.to_json
-      return
-    end
-    render json: @current_creator.twitter_profile_image.to_json
   end
 end
