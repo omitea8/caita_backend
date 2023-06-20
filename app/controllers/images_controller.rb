@@ -4,13 +4,13 @@ class ImagesController < ApplicationController
   # 画像Listを作成
   def imagelist
     creator = Creator.find_by(twitter_id: params[:creatorID])
-    data = Image.where(creator_id: creator.id).select(:caption, :image_url, :storage_name).order(created_at: :desc)
+    data = Image.where(creator_id: creator.id).select(:caption, :image_url, :image_name).order(created_at: :desc)
     render json: data.to_json
   end
 
   # 画像Dataを作成
   def imagedata
-    image = Image.find_by(storage_name: params[:storage_name])
+    image = Image.find_by(image_name: params[:image_name])
     data = {
       caption: image.caption,
       image_url: image.image_url,
@@ -35,6 +35,7 @@ class ImagesController < ApplicationController
       render json: 'NG'.to_json
       return
     end
+    create_image_name(image)
     storage_name = create_storage_name(image)
     upload_to_aws(params[:image], storage_name)
     image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
@@ -45,7 +46,7 @@ class ImagesController < ApplicationController
   # 画像を更新
   def update # rubocop:disable Metrics/AbcSize
     current_creator
-    image = Image.find_by(storage_name: params[:storage_name])
+    image = Image.find_by(image_name: params[:image_name])
     unless image.creator_id == @current_creator.id
       render json: 'NG'.to_json
       return
@@ -64,7 +65,7 @@ class ImagesController < ApplicationController
   # 画像を削除
   def delete
     current_creator
-    image = Image.find_by(storage_name: params[:storage_name])
+    image = Image.find_by(image_name: params[:image_name])
     # 本人の画像か確認
     unless image.creator_id == @current_creator.id
       render json: 'NG'.to_json
@@ -78,7 +79,6 @@ class ImagesController < ApplicationController
 
   private
 
-  # ランダムな文字列を生成
   def generate_random_string
     SecureRandom.urlsafe_base64(12)
   end
@@ -96,19 +96,31 @@ class ImagesController < ApplicationController
     storage_name
   end
 
+  def create_image_name(image)
+    result = false
+    image_name = generate_random_string
+    while result == false
+      begin
+        result = image.update(image_name: image_name)
+      rescue StandardError
+        image_name = generate_random_string
+      end
+    end
+    image_name
+  end
+
   # 画像のデータを作成
   def create_image_from(params)
     Image.new(caption: params[:caption], creator_id: @current_creator.id)
   end
 
-  # 画像のバリデーション
+  # バリデーション
   def validate_image(image)
     image.is_a?(ActionDispatch::Http::UploadedFile) &&
       ['image/png', 'image/gif', 'image/jpeg'].include?(image.content_type) &&
       image.size <= 20.megabytes
   end
 
-  # キャプションのバリデーション
   def validate_caption(caption)
     caption.is_a?(String) && caption.length <= 1000
   end
