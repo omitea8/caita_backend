@@ -4,19 +4,19 @@ class ImagesController < ApplicationController
   # 画像Listを作成
   def imagelist
     creator = Creator.find_by(twitter_id: params[:creatorID])
-    senddata = Image.where(creator_id: creator.id).select(:caption, :image_url, :id).order(created_at: :desc)
-    render json: senddata.to_json
+    data = Image.where(creator_id: creator.id).select(:caption, :image_url, :storage_name).order(created_at: :desc)
+    render json: data.to_json
   end
 
   # 画像Dataを作成
   def imagedata
-    image = Image.find_by(id: params[:imageID])
-    senddata = {
+    image = Image.find_by(storage_name: params[:storage_name])
+    data = {
       caption: image.caption,
       image_url: image.image_url,
       created_at: image.created_at
     }
-    render json: senddata.to_json
+    render json: data.to_json
   end
 
   # 画像投稿
@@ -30,48 +30,88 @@ class ImagesController < ApplicationController
       render json: 'NG'.to_json
       return
     end
-    post_data = create_post_data(params)
-    if post_data.save
-      upload_to_aws(params[:image], post_data.id.to_s)
-      post_data.update(image_url: "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{post_data.id}")
-      head :ok
-    else
-      render json: 'NG'.to_json
-    end
-  end
-
-  # 画像を削除
-  def delete
-    current_creator
-    image = Image.find_by(id: params[:imageID])
-    # 本人の画像か確認
-    unless image.creator_id == @current_creator.id
+    image = create_image_from(params)
+    unless image.save
       render json: 'NG'.to_json
       return
     end
-    delete_from_aws(image, image.id.to_s)
-    # DBから画像を削除
-    image.destroy
+    storage_name = create_storage_name(image)
+    upload_to_aws(params[:image], storage_name)
+    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
+    image.update(image_url: image_url, storage_name: storage_name)
     head :ok
   end
 
   # 画像を更新
   def update # rubocop:disable Metrics/AbcSize
     current_creator
-    image = Image.find_by(id: params[:imageID])
+    image = Image.find_by(storage_name: params[:storage_name])
+    unless image.creator_id == @current_creator.id
+      render json: 'NG'.to_json
+      return
+    end
+    if params[:image].present? && validate_image(params[:image])
+      delete_from_aws(image, image.storage_name.to_s)
+      storage_name = create_storage_name(image)
+      upload_to_aws(params[:image], storage_name)
+      image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
+      image.update(image_url: image_url, storage_name: storage_name)
+    end
+    image.update(caption: params[:caption])
+    head :ok
+  end
+
+  # 画像を削除
+  def delete
+    current_creator
+    image = Image.find_by(storage_name: params[:storage_name])
     # 本人の画像か確認
     unless image.creator_id == @current_creator.id
       render json: 'NG'.to_json
       return
     end
-    # AWSを更新
-    upload_to_aws(params[:image], image.id.to_s) if params[:image].present?
-    # DBを更新
-    image.update(caption: params[:caption])
+    delete_from_aws(image, image.storage_name.to_s)
+    # DBから画像を削除
+    image.destroy
     head :ok
   end
 
   private
+
+  # ランダムな文字列を生成
+  def generate_random_string
+    SecureRandom.urlsafe_base64(12)
+  end
+
+  def create_storage_name(image)
+    result = false
+    storage_name = generate_random_string
+    while result == false
+      begin
+        result = image.update(storage_name: storage_name)
+      rescue StandardError
+        storage_name = generate_random_string
+      end
+    end
+    storage_name
+  end
+
+  # 画像のデータを作成
+  def create_image_from(params)
+    Image.new(caption: params[:caption], creator_id: @current_creator.id)
+  end
+
+  # 画像のバリデーション
+  def validate_image(image)
+    image.is_a?(ActionDispatch::Http::UploadedFile) &&
+      ['image/png', 'image/gif', 'image/jpeg'].include?(image.content_type) &&
+      image.size <= 20.megabytes
+  end
+
+  # キャプションのバリデーション
+  def validate_caption(caption)
+    caption.is_a?(String) && caption.length <= 1000
+  end
 
   # AWS S3のクライアントを設定
   def create_s3_client
@@ -94,29 +134,12 @@ class ImagesController < ApplicationController
     )
   end
 
-  # 画像のデータを作成
-  def create_post_data(params)
-    Image.new(caption: params[:caption], creator_id: @current_creator.id)
-  end
-
-  # 画像のバリデーション
-  def validate_image(image)
-    image.is_a?(ActionDispatch::Http::UploadedFile) &&
-      ['image/png', 'image/gif', 'image/jpeg'].include?(image.content_type) &&
-      image.size <= 20.megabytes
-  end
-
-  # キャプションのバリデーション
-  def validate_caption(caption)
-    caption.is_a?(String) && caption.length <= 1000
-  end
-
   # AWS S3から画像を削除
   def delete_from_aws(image, _key)
     client = create_s3_client
     client.delete_object(
       bucket: ENV.fetch('AWS_BUCKET'),
-      key: image.id.to_s
+      key: image.storage_name.to_s
     )
   end
 end
