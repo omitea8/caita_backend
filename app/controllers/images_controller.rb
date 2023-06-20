@@ -4,13 +4,13 @@ class ImagesController < ApplicationController
   # 画像Listを作成
   def imagelist
     creator = Creator.find_by(twitter_id: params[:creatorID])
-    data = Image.where(creator_id: creator.id).select(:caption, :image_url, :storage_name).order(created_at: :desc)
+    data = Image.where(creator_id: creator.id).select(:caption, :image_url, :image_name).order(created_at: :desc)
     render json: data.to_json
   end
 
   # 画像Dataを作成
   def imagedata
-    image = Image.find_by(storage_name: params[:storage_name])
+    image = Image.find_by(image_name: params[:image_name])
     data = {
       caption: image.caption,
       image_url: image.image_url,
@@ -46,7 +46,7 @@ class ImagesController < ApplicationController
   # 画像を更新
   def update # rubocop:disable Metrics/AbcSize
     current_creator
-    image = Image.find_by(storage_name: params[:storage_name])
+    image = Image.find_by(image_name: params[:image_name])
     unless image.creator_id == @current_creator.id
       render json: 'NG'.to_json
       return
@@ -65,7 +65,7 @@ class ImagesController < ApplicationController
   # 画像を削除
   def delete
     current_creator
-    image = Image.find_by(storage_name: params[:storage_name])
+    image = Image.find_by(image_name: params[:image_name])
     # 本人の画像か確認
     unless image.creator_id == @current_creator.id
       render json: 'NG'.to_json

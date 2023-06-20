@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   get 'creators/:creatorID', to: 'creators#creator_profile'
   get 'images/creator/:creatorID', to: 'images#imagelist'
   post 'images/post'
-  get 'images/:storage_name', to: 'images#imagedata'
-  delete 'images/:storage_name', to: 'images#delete'
-  put 'images/:storage_name', to: 'images#update'
+  get 'images/:image_name', to: 'images#imagedata'
+  delete 'images/:image_name', to: 'images#delete'
+  put 'images/:image_name', to: 'images#update'
 end
