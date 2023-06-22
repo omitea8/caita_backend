@@ -21,7 +21,6 @@ class ImagesController < ApplicationController
 
   # 画像投稿
   def post # rubocop:disable Metrics/AbcSize
-    current_creator
     unless logged_in
       render json: 'NG'.to_json
       return
@@ -45,7 +44,7 @@ class ImagesController < ApplicationController
 
   # 画像を更新
   def update # rubocop:disable Metrics/AbcSize
-    current_creator
+    logged_in
     image = Image.find_by(image_name: params[:image_name])
     unless image.creator_id == @current_creator.id
       render json: 'NG'.to_json
@@ -64,7 +63,7 @@ class ImagesController < ApplicationController
 
   # 画像を削除
   def delete
-    current_creator
+    logged_in
     image = Image.find_by(image_name: params[:image_name])
     # 本人の画像か確認
     unless image.creator_id == @current_creator.id

@@ -5,7 +5,6 @@ class ApplicationController < ActionController::API
   def current_creator
     return unless session[:id]
 
-    # TODO: APIモードでも@をつけた変数を使用するのかわからない
     @current_creator ||= Creator.find_by(id: session[:id])
   end
 

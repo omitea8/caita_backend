@@ -97,6 +97,13 @@ class CreatorsController < ApplicationController
     render json: data.to_json
   end
 
+  # ログアウト
+  def logout
+    session.clear
+    session[:id] = nil
+    head :ok
+  end
+
   private
 
   # クリエイターをDBに登録
