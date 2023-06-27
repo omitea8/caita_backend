@@ -22,16 +22,16 @@ class ImagesController < ApplicationController
   # 画像投稿
   def post # rubocop:disable Metrics/AbcSize
     unless logged_in
-      render json: 'NG'.to_json
+      render json: { message: 'Unauthorized' }, status: 401
       return
     end
     unless validate_image(params[:image]) && validate_caption(params[:caption])
-      render json: 'NG'.to_json
+      render json: { message: 'Unprocessable Entity' }, status: 422
       return
     end
     image = create_image_from(params)
     unless image.save
-      render json: 'NG'.to_json
+      render json: { message: 'Internal Server Error' }, status: 500
       return
     end
     create_image_name(image)
@@ -39,7 +39,7 @@ class ImagesController < ApplicationController
     upload_to_aws(params[:image], storage_name)
     image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
     image.update(image_url: image_url, storage_name: storage_name)
-    head :ok
+    render json: { message: 'Created' }, status: 201
   end
 
   # 画像を更新
@@ -47,7 +47,7 @@ class ImagesController < ApplicationController
     logged_in
     image = Image.find_by(image_name: params[:image_name])
     unless image.creator_id == @current_creator.id
-      render json: 'NG'.to_json
+      render json: { message: 'Unauthorized' }, status: 401
       return
     end
     if params[:image].present? && validate_image(params[:image])
@@ -57,8 +57,11 @@ class ImagesController < ApplicationController
       image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
       image.update(image_url: image_url, storage_name: storage_name)
     end
-    image.update(caption: params[:caption])
-    head :ok
+    if image.update(caption: params[:caption])
+      render json: { message: 'No Content' }, status: 204
+    else
+      render json: { message: 'Unprocessable Entity' }, status: 422
+    end
   end
 
   # 画像を削除
@@ -67,13 +70,13 @@ class ImagesController < ApplicationController
     image = Image.find_by(image_name: params[:image_name])
     # 本人の画像か確認
     unless image.creator_id == @current_creator.id
-      render json: 'NG'.to_json
+      render json: { message: 'Unauthorized' }, status: 401
       return
     end
     delete_from_aws(image, image.storage_name.to_s)
     # DBから画像を削除
     image.destroy
-    head :ok
+    render json: { message: 'No Content' }, status: 204
   end
 
   private
