@@ -35,7 +35,7 @@ class CreatorsController < ApplicationController
     body = fetch_me_from_twitter(JSON.parse(res.body)['access_token'])['data']
     register_creator(body)
     session[:id] = Creator.find_by(twitter_system_id: body['id']).id
-    render json: { message: res.message }.to_json
+    render json: { message: 'ok' }, status: 200
   end
 
   # トークンをtwitterにリクエストする
@@ -101,7 +101,7 @@ class CreatorsController < ApplicationController
   def logout
     session.clear
     session[:id] = nil
-    head :ok
+    render json: { message: 'ok' }, status: 200
   end
 
   private
