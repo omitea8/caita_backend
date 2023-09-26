@@ -20,3 +20,5 @@ Style/ClassAndModuleChildren:
 Style/SymbolArray:
   Enabled: false
   # EnforcedStyle: brackets
+Metrics/ClassLength:
+  Max: 200
