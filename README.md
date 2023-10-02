@@ -1,24 +1,23 @@
-# README
+# caita
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+caita is an image posting web app.
 
-Things you may want to cover:
+### Features
 
-* Ruby version
+Uploading images, viewing, etc.
 
-* System dependencies
+### Technologies Used
 
-* Configuration
+- HTML5 / CSS3
+- JavaScript / TypeScript / React
+- Ruby / Ruby on Rails
+- AWS S3
+- SQLite / PostgresQL
+- MUI
+- Vercel
+- Render
+- GitHub
 
-* Database creation
+### License
 
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+Copyright © omi.t. All Rights Reserved.
