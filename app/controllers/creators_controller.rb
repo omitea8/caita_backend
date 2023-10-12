@@ -4,6 +4,7 @@ class CreatorsController < ApplicationController
   require 'net/http'
   require 'uri'
 
+  # ログインURLの作成
   def login_url
     state = SecureRandom.hex(16)
     session[:state] = state
@@ -21,6 +22,7 @@ class CreatorsController < ApplicationController
                         '&code_challenge_method=S256' }
   end
 
+  # トークンを作成
   def handle_token_callback # rubocop:disable Metrics/AbcSize
     # stateの検証
     return unless params[:state].match?(session[:state])
@@ -72,11 +74,9 @@ class CreatorsController < ApplicationController
     JSON.parse(res.body)
   end
 
-  # ログインクリエイター情報をDBから取得
+  # ログインクリエイターのプロフィールを取得
   def current_creator_profile
-    # session[:id]を使ってクリエイターを探す
-    creator = Creator.find_by(id: session[:id])
-    # frontendに任意のデータを送る
+    creator = Creator.search_creator_from_id(session[:id])
     data = {
       name: creator.twitter_name,
       username: creator.twitter_id,
@@ -86,9 +86,9 @@ class CreatorsController < ApplicationController
     render json: data.to_json
   end
 
-  # クリエイター情報をDBから取得
+  # twitterIDを使ってプロフィールを取得
   def creator_profile
-    creator = Creator.find_by(twitter_id: params[:creatorID])
+    creator = Creator.search_creator_from_twitter_id(params[:creatorID])
     data = {
       twitter_name: creator.twitter_name,
       twitter_profile_image: creator.twitter_profile_image,
@@ -115,6 +115,6 @@ class CreatorsController < ApplicationController
       twitter_profile_image: body['profile_image_url'],
       twitter_description: body['description']
     ]
-    Creator.upsert_all(creator, unique_by: :twitter_system_id)
+    Creator.allupdate_creator(creator)
   end
 end

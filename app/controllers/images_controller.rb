@@ -3,14 +3,14 @@ require 'aws-sdk-s3'
 class ImagesController < ApplicationController
   # 画像Listを作成
   def imagelist
-    creator = Creator.find_by(twitter_id: params[:creatorID])
-    data = Image.where(creator_id: creator.id).select(:caption, :image_url, :image_name).order(created_at: :desc)
+    creator = Creator.search_creator_from_twitter_id(params[:creatorID])
+    data = Image.create_imagelist(creator.id)
     render json: data.to_json
   end
 
   # 画像Dataを作成
   def imagedata
-    image = Image.find_by(image_name: params[:image_name])
+    image = Image.create_imagedata(params[:image_name])
     data = {
       caption: image.caption,
       image_url: image.image_url,
@@ -19,72 +19,72 @@ class ImagesController < ApplicationController
     render json: data.to_json
   end
 
-  # 画像投稿
+  # 画像投稿機能
   def post # rubocop:disable Metrics/AbcSize
     unless logged_in
-      render json: { message: 'Unauthorized' }, status: 401
+      render json: { message: 'Unauthorized' }, status: 401 # 未ログイン
       return
     end
     unless validate_image(params[:image]) && validate_caption(params[:caption])
-      render json: { message: 'Unprocessable Entity' }, status: 422
+      render json: { message: 'Unprocessable Entity' }, status: 422 # バリデーションエラー
       return
     end
-    image = create_image_from(params)
-    unless image.save
-      render json: { message: 'Internal Server Error' }, status: 500
+    image = Image.create_image_from(params[:caption], @current_creator.id)
+    unless Image.image_save(image)
+      render json: { message: 'Internal Server Error' }, status: 500 # サーバーエラー
       return
     end
     create_image_name(image)
     storage_name = create_storage_name(image)
     upload_to_aws(params[:image], storage_name)
     image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
-    image.update(image_url: image_url, storage_name: storage_name)
+    Image.update_url(image, image_url, storage_name)
     render json: { message: 'Created' }, status: 201
   end
 
   # 画像を更新
   def update # rubocop:disable Metrics/AbcSize
     logged_in
-    image = Image.find_by(image_name: params[:image_name])
+    image = Image.create_imagedata(params[:image_name])
     unless image.creator_id == @current_creator.id
-      render json: { message: 'Unauthorized' }, status: 401
+      render json: { message: 'Unauthorized' }, status: 401 # 本人の画像か確認
       return
     end
-    if params[:image].present? && validate_image(params[:image])
+    if params[:image].present? && validate_image(params[:image]) # 画像がある場合
       delete_from_aws(image, image.storage_name.to_s)
       storage_name = create_storage_name(image)
       upload_to_aws(params[:image], storage_name)
       image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
-      image.update(image_url: image_url, storage_name: storage_name)
+      Image.update_url(image, image_url, storage_name)
     end
-    if image.update(caption: params[:caption])
+    if Image.update_caption(image, params[:caption])
       render json: { message: 'No Content' }, status: 204
     else
-      render json: { message: 'Unprocessable Entity' }, status: 422
+      render json: { message: 'Unprocessable Entity' }, status: 422 # バリデーションエラー
     end
   end
 
   # 画像を削除
   def delete
     logged_in
-    image = Image.find_by(image_name: params[:image_name])
-    # 本人の画像か確認
+    image = Image.create_imagedata(params[:image_name])
     unless image.creator_id == @current_creator.id
-      render json: { message: 'Unauthorized' }, status: 401
+      render json: { message: 'Unauthorized' }, status: 401 # 本人の画像か確認
       return
     end
     delete_from_aws(image, image.storage_name.to_s)
-    # DBから画像を削除
-    image.destroy
+    Image.image_delete(image)
     render json: { message: 'No Content' }, status: 204
   end
 
   private
 
+  # ランダムな文字列を生成
   def generate_random_string
     SecureRandom.urlsafe_base64(12)
   end
 
+  # storage_nameを作成
   def create_storage_name(image)
     result = false
     storage_name = generate_random_string
@@ -98,6 +98,7 @@ class ImagesController < ApplicationController
     storage_name
   end
 
+  # image_nameを作成
   def create_image_name(image)
     result = false
     image_name = generate_random_string
@@ -111,11 +112,6 @@ class ImagesController < ApplicationController
     image_name
   end
 
-  # 画像のデータを作成
-  def create_image_from(params)
-    Image.new(caption: params[:caption], creator_id: @current_creator.id)
-  end
-
   # バリデーション
   def validate_image(image)
     image.is_a?(ActionDispatch::Http::UploadedFile) &&
@@ -127,6 +123,7 @@ class ImagesController < ApplicationController
     caption.is_a?(String) && caption.length <= 1000
   end
 
+  # AWS S3関連メソッド
   # AWS S3のクライアントを設定
   def create_s3_client
     Aws::S3::Client.new(
