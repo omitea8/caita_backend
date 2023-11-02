@@ -104,6 +104,21 @@ class CreatorsController < ApplicationController
     render json: { message: 'ok' }, status: 200
   end
 
+  # クリエイターを削除
+  def delete_creator
+    unless logged_in
+      render json: { message: 'Unauthorized' }, status: 401
+      return
+    end
+    creator = Creator.search_creator_from_id(session[:id])
+    delete_all_from_aws(creator)
+    Image.where(creator_id: creator.id).destroy_all
+    creator.destroy
+    session.clear
+    session[:id] = nil
+    render json: { message: 'ok' }, status: 200
+  end
+
   private
 
   # クリエイターをDBに登録

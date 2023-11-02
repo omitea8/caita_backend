@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   get 'creators/current_creator_profile'
   get 'creators/:creatorID', to: 'creators#creator_profile'
   post 'creators/logout'
+  delete 'creators/delete_creator'
   get 'images/creator/:creatorID', to: 'images#imagelist'
   post 'images/post'
   get 'images/:image_name', to: 'images#imagedata'
