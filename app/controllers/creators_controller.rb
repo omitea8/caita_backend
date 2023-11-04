@@ -115,9 +115,7 @@ class CreatorsController < ApplicationController
     delete_all_from_aws(creator)
     Image.where(creator_id: creator.id).destroy_all
     creator.destroy
-    session.clear
-    session[:id] = nil
-    render json: { message: 'ok' }, status: 200
+    logout
   end
 
   private
