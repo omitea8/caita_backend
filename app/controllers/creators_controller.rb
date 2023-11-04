@@ -38,6 +38,7 @@ class CreatorsController < ApplicationController
     register_creator(body)
     session[:id] = Creator.find_by(twitter_system_id: body['id']).id
     render json: { message: 'ok' }, status: 200
+    session[:login_time] = Time.current
   end
 
   # トークンをtwitterにリクエストする
