@@ -111,6 +111,11 @@ class CreatorsController < ApplicationController
       render json: { message: 'Unauthorized' }, status: 401
       return
     end
+    login_time = Time.iso8601(session[:login_time])
+    if Time.current - login_time > 3.minutes
+      render json: { message: 'Unauthorized' }, status: 401
+      return
+    end
     creator = Creator.search_creator_from_id(session[:id])
     delete_all_from_aws(creator)
     Image.where(creator_id: creator.id).destroy_all
