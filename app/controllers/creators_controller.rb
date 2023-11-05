@@ -111,7 +111,7 @@ class CreatorsController < ApplicationController
       render json: { message: 'Unauthorized' }, status: 401
       return
     end
-    login_time = Time.iso8601(session[:login_time])
+    login_time = session_login_time
     if Time.current - login_time > 3.minutes
       render json: { message: 'Unauthorized' }, status: 401
       return
@@ -135,5 +135,10 @@ class CreatorsController < ApplicationController
       twitter_description: body['description']
     ]
     Creator.allupdate_creator(creator)
+  end
+
+  # session[:login_time]を時刻に変換
+  def session_login_time
+    Time.iso8601(session[:login_time])
   end
 end
