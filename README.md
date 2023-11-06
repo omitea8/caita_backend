@@ -18,6 +18,11 @@ Uploading images, viewing, etc.
 - Render
 - GitHub
 
+### This repository
+
+caita is developed using multiple repositories.
+This is a backend repository.
+
 ### License
 
 Copyright © omi.t. All Rights Reserved.
