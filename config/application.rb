@@ -14,5 +14,10 @@ module CaitaBackend
     # cookieを使うためのmiddlewareの有効化
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, key: '_your_app_session'
+
+    # タイムゾーンを設定
+    config.time_zone = 'Tokyo'
+    # Active Recordのタイムゾーンを設定
+    config.active_record.default_timezone = :local
   end
 end

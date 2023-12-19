@@ -37,6 +37,7 @@ class CreatorsController < ApplicationController
     body = fetch_me_from_twitter(JSON.parse(res.body)['access_token'])['data']
     register_creator(body)
     session[:id] = Creator.find_by(twitter_system_id: body['id']).id
+    session[:login_time] = Time.current
     render json: { message: 'ok' }, status: 200
   end
 
@@ -104,6 +105,23 @@ class CreatorsController < ApplicationController
     render json: { message: 'ok' }, status: 200
   end
 
+  # クリエイターを削除
+  def delete_creator
+    unless logged_in
+      render json: { message: 'Unauthorized' }, status: 401
+      return
+    end
+    if expired_session?
+      render json: { message: 'Unauthorized' }, status: 401
+      return
+    end
+    creator = Creator.search_creator_from_id(session[:id])
+    delete_all_from_aws(creator)
+    Image.where(creator_id: creator.id).destroy_all
+    creator.destroy
+    logout
+  end
+
   private
 
   # クリエイターをDBに登録
@@ -116,5 +134,10 @@ class CreatorsController < ApplicationController
       twitter_description: body['description']
     ]
     Creator.allupdate_creator(creator)
+  end
+
+  # session[:login_time]が3分以上経過しているか確認
+  def expired_session?
+    Time.current - Time.iso8601(session[:login_time]) > 3.minutes
   end
 end
