@@ -3,7 +3,7 @@ require 'aws-sdk-s3'
 class ImagesController < ApplicationController
   # 画像Listを作成
   def imagelist
-    creator = Creator.search_creator_from_twitter_id(params[:creatorID])
+    creator = Creator.search_creator_from_twitter_id(params[:creator_id])
     data = Image.create_imagelist(creator.id)
     render json: data.to_json
   end
