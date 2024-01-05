@@ -93,6 +93,7 @@ class CreatorsController < ApplicationController
 
   # twitterIDを使ってプロフィールを取得
   def creator_profile
+    creator = Creator.search_creator_from_twitter_id(params[:creator_id])
     data = {
       twitter_name: creator.twitter_name,
       twitter_profile_image: creator.twitter_profile_image,
