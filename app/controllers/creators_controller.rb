@@ -77,7 +77,7 @@ class CreatorsController < ApplicationController
 
   # ログインクリエイターのプロフィールを取得
   def current_creator_profile
-    unless session[:id]
+    unless logged_in
       render json: { name: 'Not Login' }, status: 401
       return
     end
