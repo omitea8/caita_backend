@@ -77,6 +77,10 @@ class CreatorsController < ApplicationController
 
   # ログインクリエイターのプロフィールを取得
   def current_creator_profile
+    unless logged_in
+      render json: { name: 'Not Login' }, status: 401
+      return
+    end
     creator = Creator.search_creator_from_id(session[:id])
     data = {
       name: creator.twitter_name,
