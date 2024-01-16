@@ -1,4 +1,6 @@
 require 'aws-sdk-s3'
+require 'mini_magick'
+require 'stringio'
 
 class ImagesController < ApplicationController
   # 画像Listを作成
@@ -36,8 +38,20 @@ class ImagesController < ApplicationController
     end
     create_image_name(image)
     storage_name = create_storage_name(image)
-    upload_to_aws(params[:image], storage_name)
-    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
+
+    # 画像の軽量化
+    temp_image = params[:image]
+    input_image = MiniMagick::Image.open(temp_image.tempfile.path)
+    input_image.resize '1200x1200>'
+    input_image.format 'webp'
+    # 軽量画像の保存
+    storage_name_webp = "#{storage_name}.webp"
+    image_data = StringIO.new(input_image.to_blob)
+    upload_to_aws(image_data, storage_name_webp)
+    # 元画像の保存
+    storage_name_original = "#{storage_name}_original"
+    upload_to_aws(params[:image], storage_name_original)
+    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
     Image.update_url(image, image_url, storage_name)
     render json: { message: 'Created' }, status: 201
   end
@@ -84,7 +98,8 @@ class ImagesController < ApplicationController
     SecureRandom.urlsafe_base64(12)
   end
 
-  # storage_nameを作成
+  # TODO: コメントにstaraoge_nameとimage_nameの違いについて書く
+  # strage_nameを作成
   def create_storage_name(image)
     result = false
     storage_name = generate_random_string
