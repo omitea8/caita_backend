@@ -21,6 +21,7 @@ gem 'bootsnap', require: false
 gem 'aws-sdk-s3', '~> 1.0.0.rc2'
 gem 'dotenv-rails'
 gem 'faker'
+gem 'mini_magick'
 gem 'rack-cors'
 
 group :development, :test do
@@ -38,4 +39,3 @@ end
 group :production do
   gem 'pg', '1.1.4'
 end
-
