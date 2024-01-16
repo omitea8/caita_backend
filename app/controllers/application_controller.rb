@@ -24,13 +24,13 @@ class ApplicationController < ActionController::API
   end
 
   # AWS S3に画像をアップロード
-  def upload_to_aws(image, key)
+  def upload_to_aws(image, key, content_type)
     client = create_s3_client
     client.put_object(
       bucket: ENV.fetch('AWS_BUCKET'),
       key: key,
       body: image,
-      content_type: 'image/png',
+      content_type: content_type,
       cache_control: 'no-cache, no-store, must-revalidate'
     )
   end

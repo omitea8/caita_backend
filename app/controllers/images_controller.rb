@@ -138,11 +138,10 @@ class ImagesController < ApplicationController
 
     # 軽量画像の保存
     storage_name_webp = "#{storage_name}.webp"
-    webp_data = StringIO.new(input_image.to_blob)
-    upload_to_aws(webp_data, storage_name_webp)
+    upload_to_aws(input_image.to_blob, storage_name_webp, 'image/webp')
 
     # 元画像の保存
     storage_name_original = "#{storage_name}_original"
-    upload_to_aws(image_data, storage_name_original)
+    upload_to_aws(image_data, storage_name_original, 'image/png')
   end
 end
