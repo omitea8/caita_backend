@@ -55,14 +55,9 @@ class ApplicationController < ActionController::API
 
   # AWS S3からクリエイターの画像を全て削除
   def delete_all_from_aws(creator)
-    puts creator.id
-    client = create_s3_client
     images = Image.where(creator_id: creator.id)
     images.each do |image|
-      client.delete_object(
-        bucket: ENV.fetch('AWS_BUCKET'),
-        key: image.storage_name.to_s
-      )
+      delete_from_aws(image)
     end
   end
 end
