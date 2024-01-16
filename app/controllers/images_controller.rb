@@ -86,7 +86,7 @@ class ImagesController < ApplicationController
       render json: { message: 'Unauthorized' }, status: 401 # 本人の画像か確認
       return
     end
-    delete_from_aws(image, image.storage_name.to_s)
+    delete_from_aws(image)
     Image.image_delete(image)
     render json: { message: 'No Content' }, status: 204
   end

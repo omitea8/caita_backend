@@ -36,11 +36,20 @@ class ApplicationController < ActionController::API
   end
 
   # AWS S3から画像を削除
-  def delete_from_aws(image, _key)
+  def delete_from_aws(image)
     client = create_s3_client
-    client.delete_object(
+    client.delete_objects(
       bucket: ENV.fetch('AWS_BUCKET'),
-      key: image.storage_name.to_s
+      delete: {
+        objects: [
+          {
+            key: "#{image.storage_name}.webp"
+          },
+          {
+            key: "#{image.storage_name}_original"
+          }
+        ]
+      }
     )
   end
 
