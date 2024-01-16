@@ -39,18 +39,7 @@ class ImagesController < ApplicationController
     create_image_name(image)
     storage_name = create_storage_name(image)
 
-    # 画像の軽量化
-    temp_image = params[:image]
-    input_image = MiniMagick::Image.open(temp_image.tempfile.path)
-    input_image.resize '1200x1200>'
-    input_image.format 'webp'
-    # 軽量画像の保存
-    storage_name_webp = "#{storage_name}.webp"
-    image_data = StringIO.new(input_image.to_blob)
-    upload_to_aws(image_data, storage_name_webp)
-    # 元画像の保存
-    storage_name_original = "#{storage_name}_original"
-    upload_to_aws(params[:image], storage_name_original)
+    upload_aws_imagedata(params[:image], storage_name)
     image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
     Image.update_url(image, image_url, storage_name)
     render json: { message: 'Created' }, status: 201
@@ -136,5 +125,23 @@ class ImagesController < ApplicationController
 
   def validate_caption(caption)
     caption.is_a?(String) && caption.length <= 1000
+  end
+
+  # AWS S3投稿画像の作成
+  def upload_aws_imagedata(image_data, storage_name)
+    # 画像の軽量化
+    temp_image = image_data
+    input_image = MiniMagick::Image.open(temp_image.tempfile.path)
+    input_image.resize '1200x1200>'
+    input_image.format 'webp'
+
+    # 軽量画像の保存
+    storage_name_webp = "#{storage_name}.webp"
+    webp_data = StringIO.new(input_image.to_blob)
+    upload_to_aws(webp_data, storage_name_webp)
+
+    # 元画像の保存
+    storage_name_original = "#{storage_name}_original"
+    upload_to_aws(image_data, storage_name_original)
   end
 end
