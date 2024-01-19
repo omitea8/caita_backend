@@ -6,7 +6,8 @@ class Image < ApplicationRecord
 
   # 該当クリエイターの全画像のデータを取得
   def self.create_imagelist(creator_id)
-    Image.where(creator_id: creator_id).select(:caption, :image_url, :image_name).order(created_at: :desc)
+    Image.where(creator_id: creator_id).select(:caption, :image_url, :image_name,
+                                               :storage_name).order(created_at: :desc)
   end
 
   # image_nameから画像を取得

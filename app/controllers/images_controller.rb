@@ -6,17 +6,25 @@ class ImagesController < ApplicationController
   # 画像Listを作成
   def imagelist
     creator = Creator.search_creator_from_twitter_id(params[:creator_id])
-    data = Image.create_imagelist(creator.id)
+    image_data = Image.create_imagelist(creator.id)
+    data = image_data.map do |image|
+      {
+        caption: image.caption,
+        image_name: image.image_name,
+        webp_image_url: "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{image.storage_name}.webp"
+      }
+    end
     render json: data.to_json
   end
 
   # 画像Dataを作成
   def imagedata
     image = Image.create_imagedata(params[:image_name])
+    webp_image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{image.storage_name}.webp"
     data = {
       caption: image.caption,
       image_url: image.image_url,
-      created_at: image.created_at
+      webp_image_url: webp_image_url
     }
     render json: data.to_json
   end
