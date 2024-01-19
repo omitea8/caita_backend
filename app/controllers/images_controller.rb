@@ -112,7 +112,7 @@ class ImagesController < ApplicationController
   # バリデーション
   def validate_image(image)
     image.is_a?(ActionDispatch::Http::UploadedFile) &&
-      ['image/png', 'image/gif', 'image/jpeg'].include?(image.content_type) &&
+      ['image/png', 'image/jpeg', 'image/webp'].include?(image.content_type) &&
       image.size <= 20.megabytes
   end
 
