@@ -129,7 +129,7 @@ class ImagesController < ApplicationController
     input_image.format 'webp'
     storage_name_webp = "#{storage_name}.webp"
     upload_to_aws(input_image.to_blob, storage_name_webp, 'image/webp')
-    storage_name_original = "#{storage_name}_original"
+    storage_name_original = "#{storage_name}.#{content_type.sub(%r{image/}, '')}"
     upload_to_aws(image_data, storage_name_original, content_type)
   end
 
@@ -137,7 +137,8 @@ class ImagesController < ApplicationController
   def update_imagedata(image)
     storage_name = create_storage_name(image)
     upload_multi_size_image_to_aws(params[:image], storage_name)
-    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
+    content_type = params[:image].content_type
+    image_format = content_type.sub(%r{image/}, '')
     Image.update_url(image, image_url, storage_name)
   end
 end
