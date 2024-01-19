@@ -37,7 +37,7 @@ class ImagesController < ApplicationController
       return
     end
     create_image_name(image)
-    update_imagedata(image)
+    upload_multi_size_image_to_aws(image)
     render json: { message: 'Created' }, status: 201
   end
 
@@ -133,8 +133,8 @@ class ImagesController < ApplicationController
     upload_to_aws(image_data, storage_name_original, content_type)
   end
 
-  # 更新画像のデータを作成
-  def update_imagedata(image)
+  # 画像をAWS S3にアップロードしURLをDBに保存
+  def upload_multi_size_image_to_aws(image)
     storage_name = create_storage_name(image)
     upload_aws_imagedata(params[:image], storage_name)
     image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
