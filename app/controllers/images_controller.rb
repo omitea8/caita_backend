@@ -38,9 +38,7 @@ class ImagesController < ApplicationController
     end
     create_image_name(image)
     storage_name = create_storage_name(image)
-    content_type = params[:image].content_type
-
-    upload_aws_imagedata(params[:image], storage_name, content_type)
+    upload_aws_imagedata(params[:image], storage_name)
 
     image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
     Image.update_url(image, image_url, storage_name)
@@ -130,18 +128,14 @@ class ImagesController < ApplicationController
   end
 
   # AWS S3投稿画像の作成
-  def upload_aws_imagedata(image_data, storage_name, content_type)
-    # 画像の軽量化
+  def upload_aws_imagedata(image_data, storage_name)
+    content_type = image_data.content_type
     temp_image = image_data
     input_image = MiniMagick::Image.open(temp_image.tempfile.path)
     input_image.resize '1200x1200>'
     input_image.format 'webp'
-
-    # 軽量画像の保存
     storage_name_webp = "#{storage_name}.webp"
     upload_to_aws(input_image.to_blob, storage_name_webp, 'image/webp')
-
-    # 元画像の保存
     storage_name_original = "#{storage_name}_original"
     upload_to_aws(image_data, storage_name_original, content_type)
   end
