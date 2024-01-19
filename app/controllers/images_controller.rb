@@ -113,7 +113,13 @@ class ImagesController < ApplicationController
   def validate_image(image)
     image.is_a?(ActionDispatch::Http::UploadedFile) &&
       ['image/png', 'image/jpeg', 'image/webp'].include?(image.content_type) &&
-      image.size <= 20.megabytes
+      image.size <= 20.megabytes &&
+      allowed_image_extension?(image.original_filename)
+  end
+
+  def allowed_image_extension?(filename)
+    allowed_extensions = ['.png', '.jpg', '.jpeg', '.webp']
+    File.extname(filename).downcase.in?(allowed_extensions)
   end
 
   def validate_caption(caption)
