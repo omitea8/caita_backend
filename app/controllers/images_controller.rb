@@ -37,11 +37,7 @@ class ImagesController < ApplicationController
       return
     end
     create_image_name(image)
-    storage_name = create_storage_name(image)
-    upload_aws_imagedata(params[:image], storage_name)
-
-    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
-    Image.update_url(image, image_url, storage_name)
+    update_imagedata(image)
     render json: { message: 'Created' }, status: 201
   end
 
@@ -55,10 +51,7 @@ class ImagesController < ApplicationController
     end
     if params[:image].present? && validate_image(params[:image]) # 画像がある場合
       delete_from_aws(image)
-      storage_name = create_storage_name(image)
-      upload_aws_imagedata(params[:image], storage_name)
-      image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
-      Image.update_url(image, image_url, storage_name)
+      update_imagedata(image)
     end
     if Image.update_caption(image, params[:caption])
       render json: { message: 'No Content' }, status: 204
@@ -138,5 +131,13 @@ class ImagesController < ApplicationController
     upload_to_aws(input_image.to_blob, storage_name_webp, 'image/webp')
     storage_name_original = "#{storage_name}_original"
     upload_to_aws(image_data, storage_name_original, content_type)
+  end
+
+  # 更新画像のデータを作成
+  def update_imagedata(image)
+    storage_name = create_storage_name(image)
+    upload_aws_imagedata(params[:image], storage_name)
+    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
+    Image.update_url(image, image_url, storage_name)
   end
 end
