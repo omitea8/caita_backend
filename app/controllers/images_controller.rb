@@ -37,7 +37,7 @@ class ImagesController < ApplicationController
       return
     end
     create_image_name(image)
-    upload_multi_size_image_to_aws(image)
+    update_imagedata(image)
     render json: { message: 'Created' }, status: 201
   end
 
@@ -121,7 +121,7 @@ class ImagesController < ApplicationController
   end
 
   # AWS S3投稿画像の作成
-  def upload_aws_imagedata(image_data, storage_name)
+  def upload_multi_size_image_to_aws(image_data, storage_name)
     content_type = image_data.content_type
     temp_image = image_data
     input_image = MiniMagick::Image.open(temp_image.tempfile.path)
@@ -134,9 +134,9 @@ class ImagesController < ApplicationController
   end
 
   # 画像をAWS S3にアップロードしURLをDBに保存
-  def upload_multi_size_image_to_aws(image)
+  def update_imagedata(image)
     storage_name = create_storage_name(image)
-    upload_aws_imagedata(params[:image], storage_name)
+    upload_multi_size_image_to_aws(params[:image], storage_name)
     image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
     Image.update_url(image, image_url, storage_name)
   end
