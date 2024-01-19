@@ -139,6 +139,7 @@ class ImagesController < ApplicationController
     upload_multi_size_image_to_aws(params[:image], storage_name)
     content_type = params[:image].content_type
     image_format = content_type.sub(%r{image/}, '')
+    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.#{image_format}"
     Image.update_url(image, image_url, storage_name)
   end
 end
