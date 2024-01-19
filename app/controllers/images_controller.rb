@@ -1,4 +1,6 @@
 require 'aws-sdk-s3'
+require 'mini_magick'
+require 'stringio'
 
 class ImagesController < ApplicationController
   # 画像Listを作成
@@ -36,8 +38,9 @@ class ImagesController < ApplicationController
     end
     create_image_name(image)
     storage_name = create_storage_name(image)
-    upload_to_aws(params[:image], storage_name)
-    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
+    upload_aws_imagedata(params[:image], storage_name)
+
+    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
     Image.update_url(image, image_url, storage_name)
     render json: { message: 'Created' }, status: 201
   end
@@ -51,10 +54,10 @@ class ImagesController < ApplicationController
       return
     end
     if params[:image].present? && validate_image(params[:image]) # 画像がある場合
-      delete_from_aws(image, image.storage_name.to_s)
+      delete_from_aws(image)
       storage_name = create_storage_name(image)
-      upload_to_aws(params[:image], storage_name)
-      image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}"
+      upload_aws_imagedata(params[:image], storage_name)
+      image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
       Image.update_url(image, image_url, storage_name)
     end
     if Image.update_caption(image, params[:caption])
@@ -72,7 +75,7 @@ class ImagesController < ApplicationController
       render json: { message: 'Unauthorized' }, status: 401 # 本人の画像か確認
       return
     end
-    delete_from_aws(image, image.storage_name.to_s)
+    delete_from_aws(image)
     Image.image_delete(image)
     render json: { message: 'No Content' }, status: 204
   end
@@ -84,7 +87,8 @@ class ImagesController < ApplicationController
     SecureRandom.urlsafe_base64(12)
   end
 
-  # storage_nameを作成
+  # TODO: コメントにstaraoge_nameとimage_nameの違いについて書く
+  # strage_nameを作成
   def create_storage_name(image)
     result = false
     storage_name = generate_random_string
@@ -121,5 +125,18 @@ class ImagesController < ApplicationController
 
   def validate_caption(caption)
     caption.is_a?(String) && caption.length <= 1000
+  end
+
+  # AWS S3投稿画像の作成
+  def upload_aws_imagedata(image_data, storage_name)
+    content_type = image_data.content_type
+    temp_image = image_data
+    input_image = MiniMagick::Image.open(temp_image.tempfile.path)
+    input_image.resize '1200x1200>'
+    input_image.format 'webp'
+    storage_name_webp = "#{storage_name}.webp"
+    upload_to_aws(input_image.to_blob, storage_name_webp, 'image/webp')
+    storage_name_original = "#{storage_name}_original"
+    upload_to_aws(image_data, storage_name_original, content_type)
   end
 end

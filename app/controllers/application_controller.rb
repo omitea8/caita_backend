@@ -24,36 +24,40 @@ class ApplicationController < ActionController::API
   end
 
   # AWS S3に画像をアップロード
-  def upload_to_aws(image, key)
+  def upload_to_aws(image, key, content_type)
     client = create_s3_client
     client.put_object(
       bucket: ENV.fetch('AWS_BUCKET'),
       key: key,
       body: image,
-      content_type: 'image/png',
+      content_type: content_type,
       cache_control: 'no-cache, no-store, must-revalidate'
     )
   end
 
   # AWS S3から画像を削除
-  def delete_from_aws(image, _key)
+  def delete_from_aws(image)
     client = create_s3_client
-    client.delete_object(
+    client.delete_objects(
       bucket: ENV.fetch('AWS_BUCKET'),
-      key: image.storage_name.to_s
+      delete: {
+        objects: [
+          {
+            key: "#{image.storage_name}.webp"
+          },
+          {
+            key: "#{image.storage_name}_original"
+          }
+        ]
+      }
     )
   end
 
   # AWS S3からクリエイターの画像を全て削除
   def delete_all_from_aws(creator)
-    puts creator.id
-    client = create_s3_client
     images = Image.where(creator_id: creator.id)
     images.each do |image|
-      client.delete_object(
-        bucket: ENV.fetch('AWS_BUCKET'),
-        key: image.storage_name.to_s
-      )
+      delete_from_aws(image)
     end
   end
 end
