@@ -6,17 +6,25 @@ class ImagesController < ApplicationController
   # 画像Listを作成
   def imagelist
     creator = Creator.search_creator_from_twitter_id(params[:creator_id])
-    data = Image.create_imagelist(creator.id)
+    image_data = Image.create_imagelist(creator.id)
+    data = image_data.map do |image|
+      {
+        caption: image.caption,
+        image_name: image.image_name,
+        resized_image_url: "#{aws_bucket_url}#{image.storage_name}.webp"
+      }
+    end
     render json: data.to_json
   end
 
   # 画像Dataを作成
   def imagedata
     image = Image.create_imagedata(params[:image_name])
+    resized_image_url = "#{aws_bucket_url}#{image.storage_name}.webp"
     data = {
       caption: image.caption,
       image_url: image.image_url,
-      created_at: image.created_at
+      resized_image_url: resized_image_url
     }
     render json: data.to_json
   end
@@ -121,23 +129,28 @@ class ImagesController < ApplicationController
   end
 
   # AWS S3投稿画像の作成
-  def upload_multi_size_image_to_aws(image_data, storage_name)
-    content_type = image_data.content_type
+  def upload_multi_size_image_to_aws(image_data, storage_name, content_type)
     temp_image = image_data
     input_image = MiniMagick::Image.open(temp_image.tempfile.path)
     input_image.resize '1200x1200>'
     input_image.format 'webp'
-    storage_name_webp = "#{storage_name}.webp"
-    upload_to_aws(input_image.to_blob, storage_name_webp, 'image/webp')
-    storage_name_original = "#{storage_name}_original"
+    upload_to_aws(input_image.to_blob, "#{storage_name}.webp", 'image/webp')
+    # content_typeを使って元画像に拡張子をつける
+    storage_name_original = "#{storage_name}.#{content_type.sub(%r{image/}, '')}"
     upload_to_aws(image_data, storage_name_original, content_type)
   end
 
   # 画像をAWS S3にアップロードしURLをDBに保存
   def update_imagedata(image)
     storage_name = create_storage_name(image)
-    upload_multi_size_image_to_aws(params[:image], storage_name)
-    image_url = "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/#{storage_name}.webp"
+    content_type = params[:image].content_type
+    upload_multi_size_image_to_aws(params[:image], storage_name, content_type)
+    image_url = "#{aws_bucket_url}#{storage_name}.#{content_type.sub(%r{image/}, '')}"
     Image.update_url(image, image_url, storage_name)
+  end
+
+  # amazon S3へリクエストを送る時のバケットなどのURL
+  def aws_bucket_url
+    "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/"
   end
 end

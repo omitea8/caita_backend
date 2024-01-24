@@ -46,7 +46,7 @@ class ApplicationController < ActionController::API
             key: "#{image.storage_name}.webp"
           },
           {
-            key: "#{image.storage_name}_original"
+            key: image.image_url.gsub(aws_bucket_url, '').to_s
           }
         ]
       }
