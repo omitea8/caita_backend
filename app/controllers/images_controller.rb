@@ -44,16 +44,14 @@ class ImagesController < ApplicationController
     ActiveRecord::Base.transaction do # トランザクションの開始
       image = Image.create_image_from(params[:caption], @current_creator.id)
 
-      if Image.image_save(image)
-        create_image_name(image)
-        update_imagedata(image)
-        render json: { message: 'Created' }, status: 201
-      else
-        raise ActiveRecord::Rollback # ロールバックを実行
-        render json: { message: 'Internal Server Error' }, status: 500
-      end
+      raise ActiveRecord::Rollback unless Image.image_save(image)
+
+      create_image_name(image)
+      update_imagedata(image)
+      render json: { message: 'Created' }, status: 201
+
+      # ロールバックを実行
     end
-  rescue StandardError => e
     render json: { message: 'Internal Server Error' }, status: 500
   end
 
