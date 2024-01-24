@@ -11,7 +11,7 @@ class ImagesController < ApplicationController
       {
         caption: image.caption,
         image_name: image.image_name,
-        resize_image_url: "#{aws_bucket_url}#{image.storage_name}.webp"
+        resized_image_url: "#{aws_bucket_url}#{image.storage_name}.webp"
       }
     end
     render json: data.to_json
@@ -20,11 +20,11 @@ class ImagesController < ApplicationController
   # 画像Dataを作成
   def imagedata
     image = Image.create_imagedata(params[:image_name])
-    resize_image_url = "#{aws_bucket_url}#{image.storage_name}.webp"
+    resized_image_url = "#{aws_bucket_url}#{image.storage_name}.webp"
     data = {
       caption: image.caption,
       image_url: image.image_url,
-      resize_image_url: resize_image_url
+      resized_image_url: resized_image_url
     }
     render json: data.to_json
   end
