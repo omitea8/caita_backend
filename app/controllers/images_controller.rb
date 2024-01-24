@@ -32,21 +32,29 @@ class ImagesController < ApplicationController
   # 画像投稿機能
   def post # rubocop:disable Metrics/AbcSize
     unless logged_in
-      render json: { message: 'Unauthorized' }, status: 401 # 未ログイン
+      render json: { message: 'Unauthorized' }, status: 401
       return
     end
+
     unless validate_image(params[:image]) && validate_caption(params[:caption])
-      render json: { message: 'Unprocessable Entity' }, status: 422 # バリデーションエラー
+      render json: { message: 'Unprocessable Entity' }, status: 422
       return
     end
-    image = Image.create_image_from(params[:caption], @current_creator.id)
-    if Image.image_save(image)
-      create_image_name(image)
-      update_imagedata(image)
-      render json: { message: 'Created' }, status: 201
-    else
-      render json: { message: 'Internal Server Error' }, status: 500
+
+    ActiveRecord::Base.transaction do # トランザクションの開始
+      image = Image.create_image_from(params[:caption], @current_creator.id)
+
+      if Image.image_save(image)
+        create_image_name(image)
+        update_imagedata(image)
+        render json: { message: 'Created' }, status: 201
+      else
+        raise ActiveRecord::Rollback # ロールバックを実行
+        render json: { message: 'Internal Server Error' }, status: 500
+      end
     end
+  rescue StandardError => e
+    render json: { message: 'Internal Server Error' }, status: 500
   end
 
   # 画像を更新
