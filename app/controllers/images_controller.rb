@@ -32,21 +32,26 @@ class ImagesController < ApplicationController
   # 画像投稿機能
   def post # rubocop:disable Metrics/AbcSize
     unless logged_in
-      render json: { message: 'Unauthorized' }, status: 401 # 未ログイン
+      render json: { message: 'Unauthorized' }, status: 401
       return
     end
     unless validate_image(params[:image]) && validate_caption(params[:caption])
-      render json: { message: 'Unprocessable Entity' }, status: 422 # バリデーションエラー
+      render json: { message: 'Unprocessable Entity' }, status: 422
       return
     end
-    image = Image.create_image_from(params[:caption], @current_creator.id)
-    unless Image.image_save(image)
-      render json: { message: 'Internal Server Error' }, status: 500 # サーバーエラー
-      return
+    # TODO: transactionの使い方をRails有識者に聞く
+    begin
+      ActiveRecord::Base.transaction do
+        image = Image.create_image_from(params[:caption], @current_creator.id)
+        raise ActiveRecord::Rollback unless Image.image_save(image)
+
+        create_image_name(image)
+        update_imagedata(image)
+        render json: { message: 'Created' }, status: 201
+      end
+    rescue ActiveRecord::Rollback
+      render json: { message: 'Internal Server Error' }, status: 500
     end
-    create_image_name(image)
-    update_imagedata(image)
-    render json: { message: 'Created' }, status: 201
   end
 
   # 画像を更新
@@ -117,17 +122,6 @@ class ImagesController < ApplicationController
     image_name
   end
 
-  # バリデーション
-  def validate_image(image)
-    image.is_a?(ActionDispatch::Http::UploadedFile) &&
-      ['image/png', 'image/jpeg', 'image/webp'].include?(image.content_type) &&
-      image.size <= 20.megabytes
-  end
-
-  def validate_caption(caption)
-    caption.is_a?(String) && caption.length <= 1000
-  end
-
   # AWS S3投稿画像の作成
   def upload_multi_size_image_to_aws(image_data, storage_name, content_type)
     temp_image = image_data
@@ -152,5 +146,16 @@ class ImagesController < ApplicationController
   # amazon S3へリクエストを送る時のバケットなどのURL
   def aws_bucket_url
     "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/"
+  end
+
+  # バリデーション
+  def validate_image(image)
+    image.is_a?(ActionDispatch::Http::UploadedFile) &&
+      ['image/png', 'image/jpeg', 'image/webp'].include?(image.content_type) &&
+      image.size <= 20.megabytes
+  end
+
+  def validate_caption(caption)
+    caption.is_a?(String) && caption.length <= 1000
   end
 end
