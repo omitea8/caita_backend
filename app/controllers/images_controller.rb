@@ -39,15 +39,19 @@ class ImagesController < ApplicationController
       render json: { message: 'Unprocessable Entity' }, status: 422
       return
     end
-    ActiveRecord::Base.transaction do
-      image = Image.create_image_from(params[:caption], @current_creator.id)
-      raise ActiveRecord::Rollback unless Image.image_save(image)
+    # TODO: transactionの使い方をRails有識者に聞く
+    begin
+      ActiveRecord::Base.transaction do
+        image = Image.create_image_from(params[:caption], @current_creator.id)
+        raise ActiveRecord::Rollback unless Image.image_save(image)
 
-      create_image_name(image)
-      update_imagedata(image)
-      render json: { message: 'Created' }, status: 201
+        create_image_name(image)
+        update_imagedata(image)
+        render json: { message: 'Created' }, status: 201
+      end
+    rescue ActiveRecord::Rollback
+      render json: { message: 'Internal Server Error' }, status: 500
     end
-    render json: { message: 'Internal Server Error' }, status: 500
   end
 
   # 画像を更新
