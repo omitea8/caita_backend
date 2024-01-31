@@ -1,4 +1,9 @@
 class ApplicationController < ActionController::API
+  # amazon S3へリクエストを送る時のバケットなどのURL
+  def aws_bucket_url
+    "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/"
+  end
+
   private
 
   # ログインしているユーザーのcreator_idを取得
@@ -54,10 +59,24 @@ class ApplicationController < ActionController::API
   end
 
   # AWS S3からクリエイターの画像を全て削除
+  # TODO: delete_objectsは1000件までしか削除できないので、バッチ処理をして100件以上のリクエストは分割したい
   def delete_all_from_aws(creator)
     images = Image.where(creator_id: creator.id)
-    images.each do |image|
-      delete_from_aws(image)
-    end
+    keys =
+      images.flat_map do |image|
+        [{
+          key: "#{image.storage_name}.webp"
+        }, {
+          key: image.image_url.gsub(aws_bucket_url, '').to_s
+        }]
+      end
+
+    client = create_s3_client
+    client.delete_objects(
+      bucket: ENV.fetch('AWS_BUCKET'),
+      delete: {
+        objects: keys
+      }
+    )
   end
 end
