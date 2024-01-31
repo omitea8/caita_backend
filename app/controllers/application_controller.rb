@@ -1,4 +1,9 @@
 class ApplicationController < ActionController::API
+  # amazon S3へリクエストを送る時のバケットなどのURL
+  def aws_bucket_url
+    "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/"
+  end
+
   private
 
   # ログインしているユーザーのcreator_idを取得

@@ -143,11 +143,6 @@ class ImagesController < ApplicationController
     Image.update_url(image, image_url, storage_name)
   end
 
-  # amazon S3へリクエストを送る時のバケットなどのURL
-  def aws_bucket_url
-    "https://#{ENV.fetch('AWS_BUCKET')}.s3.#{ENV.fetch('AWS_REGION')}.amazonaws.com/"
-  end
-
   # バリデーション
   def validate_image(image)
     image.is_a?(ActionDispatch::Http::UploadedFile) &&
