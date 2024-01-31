@@ -59,6 +59,7 @@ class ApplicationController < ActionController::API
   end
 
   # AWS S3からクリエイターの画像を全て削除
+  # TODO: delete_objectsは1000件までしか削除できないので、バッチ処理をして100件以上のリクエストは分割したい
   def delete_all_from_aws(creator)
     images = Image.where(creator_id: creator.id)
     keys =
