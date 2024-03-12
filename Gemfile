@@ -19,6 +19,7 @@ gem 'bootsnap', require: false
 
 # I put in
 gem 'aws-sdk-s3', '~> 1.0.0.rc2'
+gem 'derailed_benchmarks'
 gem 'dotenv-rails'
 gem 'faker'
 gem 'mini_magick'
