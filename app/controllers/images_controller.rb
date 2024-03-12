@@ -35,31 +35,22 @@ class ImagesController < ApplicationController
       render json: { message: 'Unauthorized' }, status: 401
       return
     end
-    Benchmark.bm 20 do |r|
-      r.report 'validate' do
-        unless validate_image(params[:image]) && validate_caption(params[:caption])
-          render json: { message: 'Unprocessable Entity' }, status: 422
-          return
-        end
-      end
-      # TODO: transactionの使い方をRails有識者に聞く
-      begin
-        ActiveRecord::Base.transaction do
-          image = nil
-          r.report 'create_image' do
-            image = Image.create_image_from(params[:caption], @current_creator.id)
-            raise ActiveRecord::Rollback unless Image.image_save(image)
+    unless validate_image(params[:image]) && validate_caption(params[:caption])
+      render json: { message: 'Unprocessable Entity' }, status: 422
+      return
+    end
+    # TODO: transactionの使い方をRails有識者に聞く
+    begin
+      ActiveRecord::Base.transaction do
+        image = Image.create_image_from(params[:caption], @current_creator.id)
+        raise ActiveRecord::Rollback unless Image.image_save(image)
 
-            create_image_name(image)
-          end
-          r.report 'update_imagedata' do
-            update_imagedata(image)
-            render json: { message: 'Created' }, status: 201
-          end
-        end
-      rescue ActiveRecord::Rollback
-        render json: { message: 'Internal Server Error' }, status: 500
+        create_image_name(image)
+        update_imagedata(image)
+        render json: { message: 'Created' }, status: 201
       end
+    rescue ActiveRecord::Rollback
+      render json: { message: 'Internal Server Error' }, status: 500
     end
   end
 
