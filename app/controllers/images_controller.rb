@@ -126,6 +126,7 @@ class ImagesController < ApplicationController
   def upload_multi_size_image_to_aws(image_data, storage_name, content_type)
     temp_image = image_data
     input_image = MiniMagick::Image.open(temp_image.tempfile.path)
+    input_image.auto_orient
     input_image.resize '1200x1200>'
     input_image.format 'webp'
     upload_to_aws(input_image.to_blob, "#{storage_name}.webp", 'image/webp')
